@@ -1,0 +1,7 @@
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
+  '@nexconn/server-sdk@https://codeload.github.com/NexconnAI-Dev/nexconn-server-sdk-node/tar.gz/06acc1a48583761e93247c55d5c60d3d46338b0e': true
+  core-js: false
+  protobufjs: false
+  esbuild: true

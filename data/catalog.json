@@ -1,0 +1,23 @@
+{
+  "college": "RMKEC",
+  "depts": [
+    {
+      "dept": "CSE",
+      "years": [
+        {
+          "year": 3,
+          "semester": 5,
+          "sections": ["A", "B"],
+          "courses": [
+            {
+              "code": "EXAMPLE",
+              "title": "EXAMPLE: Computer Networks",
+              "examDate": "2026-11-24",
+              "units": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
