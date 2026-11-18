@@ -12,6 +12,7 @@ import {
   type GroupChannelMessageSendRequest,
 } from "@nexconn/server-sdk";
 
+import { TA_AVATAR } from "./bot-avatar";
 import { nexconnEnvSchema } from "./config-env";
 import { BOT_IDS } from "./ids";
 import type { MSG } from "./messages";
@@ -95,7 +96,7 @@ function hasCode(error: unknown, code: number): boolean {
   return error instanceof NexconnError && error.errorCode === code;
 }
 
-export async function ensureGroup(channelId: string, name: string): Promise<void> {
+export async function ensureGroup(channelId: string, name: string, ownerRegistered = false): Promise<void> {
   try {
     const data = await request("look up the group", () => groups.batchGetGroupChannelProfiles({ channelIds: [channelId] }));
     if (data.result?.profiles?.some((profile) => profile.channelId === channelId)) return;
@@ -103,7 +104,7 @@ export async function ensureGroup(channelId: string, name: string): Promise<void
     if (!hasCode(error, GROUP_NOT_FOUND)) throw error;
   }
 
-  await issueToken(BOT_IDS.TA, "DoubtRoom TA");
+  if (!ownerRegistered) await issueToken(BOT_IDS.TA, "DoubtRoom TA", TA_AVATAR);
   try {
     await request("create the group", () => groups.createGroupChannel({ channelId, name, owner: BOT_IDS.TA }));
   } catch (error) {

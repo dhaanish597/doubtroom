@@ -1,1 +1,70 @@
-console.info("Seeding is scheduled for Phase 3.");
+import catalog from "../data/catalog.json";
+import { TA_AVATAR } from "@/lib/nexconn/bot-avatar";
+import { BOT_IDS, DEMO_ROOM_ID } from "@/lib/nexconn/ids";
+import { issueToken, joinGroup, NexconnError } from "@/lib/nexconn/server";
+import { sectionRoom, subjectRoom, type RoomDefinition } from "@/lib/rooms/definitions";
+import { provisionRooms } from "@/lib/rooms/provision";
+import { adminSupabase } from "@/lib/supabase/admin";
+
+async function seed() {
+  const cohorts = catalog.depts.flatMap(({ dept, years }) => years.map((year) => ({ dept, ...year })));
+  const courses = cohorts.flatMap(({ dept, year, semester, courses }) =>
+    courses.map(({ code, title, examDate, units }) => ({ code, title, dept, year, semester, exam_date: examDate, units })),
+  );
+  if (!courses.length || courses.some(({ code, units }) => code === "EXAMPLE" || units.length !== 5)) {
+    throw new Error("The catalog needs real courses with five units each");
+  }
+
+  const db = adminSupabase();
+  const bots: { nexconn_user_id: string; display_name: string; avatar_url: string | null }[] = [
+    { nexconn_user_id: BOT_IDS.TA, display_name: "DoubtRoom TA", avatar_url: TA_AVATAR },
+    { nexconn_user_id: BOT_IDS.DEMO_MENTOR, display_name: "Arun (IV CSE, demo)", avatar_url: null },
+    { nexconn_user_id: BOT_IDS.DEMO_PRIYA, display_name: "Priya (III CSE, demo)", avatar_url: null },
+  ];
+
+  const { data: existing, error: profileError } = await db.from("profiles").select("nexconn_user_id,nexconn_token")
+    .in("nexconn_user_id", bots.map(({ nexconn_user_id }) => nexconn_user_id));
+  if (profileError) throw profileError;
+  const tokens = new Map<string, string | null>(existing.map(({ nexconn_user_id, nexconn_token }) => [nexconn_user_id, nexconn_token]));
+  const profileIds = new Map<string, string>();
+  for (const bot of bots) {
+    const cached = tokens.get(bot.nexconn_user_id);
+    const token = cached ?? await issueToken(bot.nexconn_user_id, bot.display_name, bot.avatar_url ?? undefined);
+    const { data, error } = await db.from("profiles").upsert({
+      ...bot, college: catalog.college, role: "bot", nexconn_token: token,
+      ...(cached ? {} : { token_issued_at: new Date().toISOString() }),
+    }, { onConflict: "nexconn_user_id" }).select("id").single<{ id: string }>();
+    if (error) throw error;
+    profileIds.set(bot.nexconn_user_id, data.id);
+  }
+
+  const { error: courseError } = await db.from("courses").upsert(courses);
+  if (courseError) throw courseError;
+
+  const demo: RoomDefinition = {
+    id: DEMO_ROOM_ID, kind: "demo", title: "Demo: Computer Networks",
+    course_code: null, dept: null, year: null, section: null,
+  };
+  const sections = cohorts.flatMap(({ dept, year, sections }) =>
+    sections.map((section) => sectionRoom({ dept, year, section })),
+  );
+  const rooms = [...courses.map(subjectRoom), ...sections, demo];
+  await provisionRooms(rooms, true);
+  await joinGroup(demo.id, [BOT_IDS.DEMO_MENTOR, BOT_IDS.DEMO_PRIYA]);
+
+  const ownerId = profileIds.get(BOT_IDS.TA);
+  const membership = [
+    ...rooms.map(({ id }) => ({ room_id: id, profile_id: ownerId })),
+    ...[BOT_IDS.DEMO_MENTOR, BOT_IDS.DEMO_PRIYA].map((id) => ({ room_id: demo.id, profile_id: profileIds.get(id) })),
+  ];
+  const { error: memberError } = await db.from("room_members").upsert(membership, { ignoreDuplicates: true });
+  if (memberError) throw memberError;
+
+  console.info(`Seeded ${profileIds.size} bot profiles, ${courses.length} courses, and ${rooms.length} rooms (${sections.length} sections, 1 demo).`);
+}
+
+void seed().catch((error: unknown) => {
+  const code = error instanceof NexconnError ? ` (Nexconn ${error.errorCode})` : "";
+  console.error(`Seed failed${code}. Check the Supabase and Nexconn configuration, then rerun pnpm seed.`);
+  process.exitCode = 1;
+});

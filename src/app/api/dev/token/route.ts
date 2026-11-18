@@ -1,4 +1,3 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
 import { DEV_ROOM_ID, DEV_ROOM_NAME } from "@/lib/nexconn/dev-room";
@@ -15,19 +14,8 @@ function failure(status: number, code: string, message: string) {
   return Response.json({ error: { code, message } }, { status, headers: noStore });
 }
 
-function authorized(request: Request): boolean {
-  if (process.env.NODE_ENV !== "production") return true;
-
-  const expected = process.env.CRON_SECRET;
-  const supplied = request.headers.get("x-dev-key");
-  if (!expected || !supplied) return false;
-
-  const digest = (value: string) => createHash("sha256").update(value).digest();
-  return timingSafeEqual(digest(supplied), digest(expected));
-}
-
 export async function GET(request: Request) {
-  if (!authorized(request)) return failure(403, "FORBIDDEN", "A valid dev key is required");
+  if (process.env.NODE_ENV === "production") return failure(404, "NOT_FOUND", "Not found");
 
   const query = new URL(request.url).searchParams;
   const parsed = querySchema.safeParse({ userId: query.get("userId"), name: query.get("name") });

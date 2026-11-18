@@ -10,10 +10,52 @@
           "sections": ["A", "B"],
           "courses": [
             {
-              "code": "EXAMPLE",
-              "title": "EXAMPLE: Computer Networks",
-              "examDate": "2026-11-24",
-              "units": []
+              "code": "CS3591",
+              "title": "Computer Networks",
+              "examDate": null,
+              "units": [
+                "Unit 1: INTRODUCTION AND APPLICATION LAYER",
+                "Unit 2: TRANSPORT LAYER",
+                "Unit 3: NETWORK LAYER",
+                "Unit 4: ROUTING",
+                "Unit 5: DATA LINK AND PHYSICAL LAYERS"
+              ]
+            },
+            {
+              "code": "CS3501",
+              "title": "Compiler Design",
+              "examDate": null,
+              "units": [
+                "Unit 1: INTRODUCTION TO COMPILERS & LEXICAL ANALYSIS",
+                "Unit 2: SYNTAX ANALYSIS",
+                "Unit 3: SYNTAX DIRECTED TRANSLATION & INTERMEDIATE CODE GENERATION",
+                "Unit 4: RUN-TIME ENVIRONMENT AND CODE GENERATION",
+                "Unit 5: CODE OPTIMIZATION"
+              ]
+            },
+            {
+              "code": "CB3491",
+              "title": "Cryptography and Cyber Security",
+              "examDate": null,
+              "units": [
+                "Unit 1: INTRODUCTION TO SECURITY",
+                "Unit 2: SYMMETRIC CIPHERS",
+                "Unit 3: ASYMMETRIC CRYPTOGRAPHY",
+                "Unit 4: INTEGRITY AND AUTHENTICATION ALGORITHMS",
+                "Unit 5: CYBER CRIMES AND CYBER SECURITY"
+              ]
+            },
+            {
+              "code": "CS3551",
+              "title": "Distributed Computing",
+              "examDate": null,
+              "units": [
+                "Unit 1: INTRODUCTION",
+                "Unit 2: LOGICAL TIME AND GLOBAL STATE",
+                "Unit 3: DISTRIBUTED MUTEX AND DEADLOCK",
+                "Unit 4: CONSENSUS AND RECOVERY",
+                "Unit 5: CLOUD COMPUTING"
+              ]
             }
           ]
         }

@@ -8,10 +8,16 @@ export const useConnection = create<{
   code: number | null;
   error: string | null;
   channelsSynced: boolean;
+  channelRevision: number;
 }>(() => ({
   status: "idle",
   userId: null,
   code: null,
   error: null,
   channelsSynced: false,
+  channelRevision: 0,
 }));
+
+export function notifyChannelChange() {
+  useConnection.setState(({ channelRevision }) => ({ channelRevision: channelRevision + 1 }));
+}

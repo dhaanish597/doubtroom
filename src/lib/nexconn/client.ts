@@ -1,7 +1,7 @@
 "use client";
 
 import { publicEnv } from "@/lib/public-env";
-import { useConnection, type ChatStatus } from "@/lib/stores/connection";
+import { notifyChannelChange, useConnection, type ChatStatus } from "@/lib/stores/connection";
 import { useMessages } from "@/lib/stores/messages";
 import { MSG } from "./messages";
 
@@ -42,7 +42,9 @@ export function initNexconn(): Promise<ChatSdk> {
     }));
     NCEngine.addMessageHandler("app", new MessageHandler({
       onMessageReceived({ messages }) {
-        if (currentToken) useMessages.getState().mergeMessages(messages);
+        if (!currentToken) return;
+        useMessages.getState().mergeMessages(messages);
+        notifyChannelChange();
       },
       onMessageMetadataUpdated({ channelIdentifier, messageId, metadata }) {
         if (currentToken) useMessages.getState().mergeMetadata(channelIdentifier, messageId, metadata);
@@ -51,6 +53,9 @@ export function initNexconn(): Promise<ChatSdk> {
     NCEngine.addChannelHandler("app", new ChannelHandler({
       onChannelsSyncComplete() {
         if (currentToken) useConnection.setState({ channelsSynced: true });
+      },
+      onChannelUnreadStatusSync() {
+        if (currentToken) notifyChannelChange();
       },
     }));
     sdk = chat;

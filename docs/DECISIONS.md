@@ -32,3 +32,17 @@ The installed server SDK appends paths to its configured URL without adding a sc
 adapter adds `https://` to the validated hostnames. The temporary token route issues only
 `dev_*` identities and still requires the shared dev key in production. This keeps application
 and bot identities out of the test endpoint.
+
+## D-005 Phase 3 onboarding retries and session events
+
+Date: 19 Nov 2026 | Phase: 3
+
+Migration `0002_phase3.sql` adds a pending onboarding selection. Retries and concurrent
+submissions continue the same plan after Nexconn provisioning begins. A service-role-only
+function finalizes memberships, mentor subjects, the profile, and its onboarding event in
+one database transaction. Chat session updates use a second service-role function and a
+unique event index for one `connected` event per profile per India Standard Time day.
+
+Phase 3 keeps the existing Web Chat SDK and custom React UI from D-001. The production build
+returns 404 for the Phase 2 dev chat page and token endpoint. The Try cookie verifier accepts
+a signed profile ID with the `doubtroom-try` audience and an expiry. Phase 9 will issue cookies.

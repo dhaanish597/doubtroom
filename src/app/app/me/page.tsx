@@ -1,6 +1,24 @@
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
-// Reserved for a later phase.
-export default function PlaceholderPage() {
-  notFound();
+import { getPageActor } from "@/lib/auth/actor";
+import { SignOutButton } from "./sign-out";
+
+export default async function MePage() {
+  const actor = await getPageActor();
+  if (!actor) redirect("/login");
+  const { display_name, role, dept, year, section } = actor.profile;
+
+  return (
+    <main className="mx-auto w-full max-w-2xl px-4 py-7 sm:px-6">
+      <h1 className="text-3xl font-semibold tracking-tight">Me</h1>
+      <section className="mt-5 space-y-3 rounded-xl border p-5" aria-label="Your profile">
+        <h2 className="text-xl font-semibold">{display_name}</h2>
+        <p className="text-sm text-muted-foreground">
+          <span className="capitalize">{actor.kind === "try" ? "Guest" : role}</span>
+          {dept && year && section ? ` · ${dept} Year ${year} · Section ${section}` : ""}
+        </p>
+        {actor.kind === "user" && <SignOutButton />}
+      </section>
+    </main>
+  );
 }

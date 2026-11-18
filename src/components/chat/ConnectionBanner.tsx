@@ -1,11 +1,10 @@
 "use client";
 
 import { CONNECTION_CODE } from "@/lib/nexconn/codes";
-import { useNexconnStatus } from "@/lib/nexconn/provider";
 import { useConnection } from "@/lib/stores/connection";
 
 export function ConnectionBanner({ onReconnect }: { onReconnect: () => void }) {
-  const status = useNexconnStatus();
+  const status = useConnection((state) => state.status);
   const code = useConnection((state) => state.code);
   const error = useConnection((state) => state.error);
 
