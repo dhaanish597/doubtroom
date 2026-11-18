@@ -1,19 +1,16 @@
 import "server-only";
 
 import { z } from "zod";
+import { nexconnEnvSchema } from "@/lib/nexconn/config-env";
 
 const required = z.string().trim().min(1);
-const domain = z.hostname();
 const dailyLimit = z.string().regex(/^\d+$/).transform(Number).pipe(z.number().int().positive());
 const inviteCode = z.string().trim().length(6);
 const adminEmails = required.transform((value) => value.split(",").map((email) => email.trim()))
   .pipe(z.array(z.email()).min(1));
 
 const serverEnvSchema = z.object({
-  NEXCONN_APP_KEY: required,
-  NEXCONN_APP_SECRET: required,
-  NEXCONN_PRIMARY_API_DOMAIN: domain,
-  NEXCONN_SECONDARY_API_DOMAIN: domain,
+  ...nexconnEnvSchema.shape,
   SUPABASE_SERVICE_ROLE_KEY: required,
   GEMINI_API_KEY: required,
   GEMINI_MODEL: required,

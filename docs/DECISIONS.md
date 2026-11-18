@@ -21,3 +21,14 @@ Date: 18 Nov 2026 | Phase: 1
 `server-only` enforces the server environment boundary in Next.js. The shadcn registry adds
 `class-variance-authority`, `radix-ui`, `next-themes`, `sonner`, `tw-animate-css` and the
 `shadcn` stylesheet. The shadcn CLI is a development dependency.
+
+## D-004 Nexconn Phase 2 API and test identities
+
+Date: 18 Nov 2026 | Phase: 2
+
+The integration uses the official Web Chat SDK with a custom React interface (Layer 3, as in D-001).
+The endpoint-specific registration, create and join docs specify body `code: 0` with HTTP 200.
+The installed server SDK appends paths to its configured URL without adding a scheme, so the
+adapter adds `https://` to the validated hostnames. The temporary token route issues only
+`dev_*` identities and still requires the shared dev key in production. This keeps application
+and bot identities out of the test endpoint.
