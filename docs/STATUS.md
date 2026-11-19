@@ -1,7 +1,7 @@
 # STATUS
 
 Last updated: 20 Nov 2026 by Claude Code
-Current phase: 13 done; waiting on LLM and PostHog keys, then Phase 15–17 (video, PDF, submission)
+Current phase: 13 done and keys live; next Phase 15–17 (video, PDF, submission) and real-user checks
 Live URL: https://doubtroom-ochre.vercel.app
 Latest implementation tag: phase-10 (phase 13 committed on main)
 
@@ -37,7 +37,9 @@ Latest implementation tag: phase-10 (phase 13 committed on main)
 - Live `/try` walk-through at 375 px: demo history, upvote (tour ticks), Ask a senior DM with scripted reply in about 3 s, and a clear 429 message when the per-IP demo limit is hit.
 
 ## In progress
-- BLOCKED on keys: GEMINI_API_KEY, GROQ_API_KEY (TA answers, recap summaries, notes embeddings) and NEXT_PUBLIC_POSTHOG_KEY/HOST (analytics). After adding them: redeploy, ingest demo notes, run the e2e "AI TA answers" and "second user" tests, run a manual recap in demo_cn.
+- Groq only (D-016): `openai/gpt-oss-120b`, doubt to answer 2.6 s on the live backend, Tanglish verified after the language-rule fix. No notes citations without Gemini embeddings.
+- PostHog is live (events reach us.i.posthog.com). The production recap ran once on 20 Nov and posted a correct card in demo_cn.
+- All 5 e2e tests pass against the live backend (local dev server). Re-run against the production URL once the /try per-IP window clears.
 - Not yet verified with real signed-in accounts: Google sign-in and onboarding on production, mentor verify flipping cards on two devices, announcement "Seen by" with 3+ readers, mute/unmute, Exam Eve with two users, DM presence dot and typing.
 - The catalog has four Anna University R2021 courses. RMKEC's 2026 third-year timetable names R2024. Confirm the real course codes before launch (data/catalog.json, then `pnpm seed`).
 - Manual phases left for you: 14 (make repo public, GIF check), 15 (video), 16 (PDF), 17 (submission form), 14 traction runbook.
