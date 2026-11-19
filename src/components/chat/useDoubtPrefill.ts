@@ -8,7 +8,8 @@ import { MSG, safeParseDoubt } from "@/lib/nexconn/messages";
 import { useConnection } from "@/lib/stores/connection";
 import { channelKeyFor, useMessages } from "@/lib/stores/messages";
 
-export type DoubtContext = { roomId: string; roomTitle: string; doubtMessageId: string };
+/** `own` is false when a senior opens the DM from someone else's doubt. */
+export type DoubtContext = { roomId: string; roomTitle: string; doubtMessageId: string; own?: boolean };
 
 function doubtText(messageType: string | undefined, content: unknown) {
   if (messageType !== MSG.DOUBT) return null;
@@ -43,5 +44,5 @@ export function useDoubtPrefill(context?: DoubtContext) {
   }, [context, cached, connected]);
 
   const text = cached ?? fetched;
-  return context && text ? doubtPrefill(context.roomTitle, text) : "";
+  return context && text ? doubtPrefill(context.roomTitle, text, context.own ?? true) : "";
 }

@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { GroupChannel } from "@nexconn/chat";
+import type { GroupChannel, Message } from "@nexconn/chat";
 import { nanoid } from "nanoid";
 
 import { trackRoomEvent } from "@/lib/analytics";
+import { recordSeniorAnswer, startSeniorReply, useAnswerUi, type ReplyTarget } from "@/lib/answers/client";
 import { initNexconn } from "@/lib/nexconn/client";
 import { BOT_IDS } from "@/lib/nexconn/identities";
 import { MSG, MESSAGE_STATUS, STANDARD_MSG, renderableMessage } from "@/lib/nexconn/messages";
@@ -13,11 +14,26 @@ import { channelKeyFor, useMessages, type ChatMessage } from "@/lib/stores/messa
 import { loadProfiles } from "@/lib/stores/profiles";
 import { markRoomPreviewRead, recordRoomMessage, useRooms } from "@/lib/stores/rooms";
 import { Composer, type SendDraft } from "./Composer";
+import { FocusedMessage } from "./FocusedMessage";
 import { MessageList } from "./MessageList";
 import { useChannelHistory } from "./useChannelHistory";
+import { useJumpToMessage } from "./useJumpToMessage";
 
 const EMPTY_MESSAGES: ChatMessage[] = [];
-type PendingMessage = { message: ChatMessage; draft: SendDraft; owner: string; imageUrl?: string };
+type PendingMessage = { message: ChatMessage; draft: SendDraft; owner: string; imageUrl?: string; reply?: ReplyTarget };
+type ChatSdk = Awaited<ReturnType<typeof initNexconn>>;
+
+/** The doubt a senior answer quotes, as a full SDK message so the SDK helper can wrap it. */
+async function quotedDoubt(sdk: ChatSdk, room: GroupChannel, key: string, messageId: string): Promise<Message> {
+  const result = await sdk.BaseChannel.getMessagesByIds({ channelIdentifier: room.identifier, messageIds: [messageId] })
+    .catch(() => null);
+  const fetched = result?.isOk ? result.data?.[messageId] : undefined;
+  if (fetched) return fetched;
+  const stored = useMessages.getState().byChannel[key]?.find((entry) => entry.messageId === messageId);
+  if (!stored) throw new Error("Doubt message unavailable");
+  // wrapAsReferenceMessageContent reads only content, messageType, messageId and senderUserId.
+  return stored as unknown as Message;
+}
 const NO_UNITS: string[] = [];
 
 async function uploadDoubtImage(roomId: string, doubtId: string, file: File) {
@@ -45,9 +61,12 @@ async function requestTa(body: object) {
   if (!response.ok) throw new Error("TA request failed");
 }
 
-export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false }: {
+export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false, focusMessageId }: {
   roomId: string; title: string; initialUnits?: string[]; dev?: boolean;
+  /** Message to scroll to and highlight, for example from the doubt board. */
+  focusMessageId?: string;
 }) {
+  const replyTo = useAnswerUi((state) => state.replyTo?.roomId === roomId ? state.replyTo : null);
   const units = useRooms((state) => state.rooms?.find((room) => room.id === roomId)?.units ?? initialUnits);
   const [taError, setTaError] = useState("");
   const userId = useConnection((state) => state.userId);
@@ -113,6 +132,16 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
       .sort((a, b) => a.sentTime - b.sentTime);
   }, [received, pending, userId, historyFloor]);
 
+  const loadOlder = useCallback(() => loadMore(() => useConnection.getState().userId === userId), [loadMore, userId]);
+  const jump = useJumpToMessage({
+    targetId: focusMessageId, viewport, messageCount: messages.length, ready, loading,
+    hasOlder, error: historyError, loadMore: loadOlder,
+  });
+  // A senior answer draft belongs to the room it was started in.
+  useEffect(() => () => {
+    if (useAnswerUi.getState().replyTo?.roomId === roomId) startSeniorReply(null);
+  }, [roomId]);
+
   useEffect(() => {
     if (!connected) return;
     const onVisible = () => void clearRead();
@@ -147,11 +176,17 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
     ]);
     let imageUrl = item.imageUrl;
     try {
-      const { GroupChannel, Helper, MentionedType, SendMessageParams, SendTextMessageParams } = await initNexconn();
+      const sdk = await initNexconn();
+      const { GroupChannel, Helper, MentionedType, SendMessageParams, SendReferenceMessageParams, SendTextMessageParams } = sdk;
       if (useConnection.getState().userId !== item.owner) throw new Error("Chat identity changed");
       const room = new GroupChannel(roomId);
       let result;
-      if (draft.kind === "doubt") {
+      if (draft.kind === "answer") {
+        if (!item.reply) throw new Error("Missing doubt for the senior answer");
+        const doubt = await quotedDoubt(sdk, room, key, item.reply.doubtMessageId);
+        if (useConnection.getState().userId !== item.owner) throw new Error("Chat identity changed");
+        result = await room.sendMessage(new SendReferenceMessageParams(Helper.wrapAsReferenceMessageContent(doubt, draft.text)));
+      } else if (draft.kind === "doubt") {
         if (draft.file && !imageUrl) imageUrl = await uploadDoubtImage(roomId, draft.doubtId, draft.file);
         if (useConnection.getState().userId !== item.owner) throw new Error("Chat identity changed");
         const params = new SendMessageParams({
@@ -191,6 +226,11 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
           : draft.kind === "chat" && draft.mentions.includes(BOT_IDS.TA)
             ? { roomId, messageId, mode: "mention", text: draft.text } : null;
         if (draft.kind === "doubt") trackRoomEvent("doubt_posted", roomId);
+        if (draft.kind === "answer" && item.reply) {
+          setTaError("");
+          void recordSeniorAnswer({ roomId, doubtId: item.reply.doubtId, messageId, text: draft.text })
+            .catch(() => setTaError("Your answer is in the chat, but the doubt board didn’t update."));
+        }
         if (ask) {
           setTaError("");
           void requestTa(ask).catch(() => setTaError("Your message was posted, but the TA couldn’t start an answer."));
@@ -211,20 +251,28 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
 
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={`Chat in ${title}`}>
+      {jump.state === "missing" && focusMessageId && (
+        <FocusedMessage roomId={roomId} messageId={focusMessageId} userId={userId} onClose={jump.dismiss} />
+      )}
       <MessageList roomId={roomId} messages={messages} userId={userId} ready={ready} connected={connected} loading={loading} error={historyError} hasOlder={hasOlder}
-        viewportRef={viewport} anchorRef={anchor} onLoad={() => loadMore(() => useConnection.getState().userId === userId)} onRetry={(id) => {
+        viewportRef={viewport} anchorRef={anchor} onLoad={loadOlder} onRetry={(id) => {
           const item = pending.find((entry) => entry.message.messageId === id);
           if (item) void send(item);
         }} />
       {taError && <p role="alert" className="border-t px-4 py-2 text-sm text-destructive">{taError}</p>}
-      <Composer roomId={roomId} units={units} allowDoubts={!dev} connected={connected} progress={progress} onSend={(draft) => {
+      <Composer roomId={roomId} units={units} allowDoubts={!dev} connected={connected} progress={progress}
+        reply={replyTo && { quotedText: replyTo.quotedText, onCancel: () => startSeniorReply(null) }} onSend={(draft) => {
         if (!userId) return;
-        void send({ owner: userId, draft, message: {
+        const reply = draft.kind === "answer" ? replyTo ?? undefined : undefined;
+        if (draft.kind === "answer" && !reply) return;
+        if (reply) startSeniorReply(null);
+        void send({ owner: userId, draft, reply, message: {
           messageId: `local:${nanoid()}`, messageType: STANDARD_MSG.TEXT, senderUserId: userId,
           sentStatus: MESSAGE_STATUS.SENDING, sentTime: Date.now(),
           content: draft.kind === "photo" ? { text: `Photo: ${draft.file.name}` }
             : draft.kind === "doubt" ? { text: draft.text || "Photo doubt" }
-              : { text: draft.text, mentionedInfo: { userIdList: draft.mentions } },
+              : draft.kind === "answer" ? { text: draft.text }
+                : { text: draft.text, mentionedInfo: { userIdList: draft.mentions } },
           metadata: new Map(),
         } });
       }} />

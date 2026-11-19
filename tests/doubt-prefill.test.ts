@@ -8,6 +8,11 @@ describe("DM doubt prefill", () => {
       .toBe('About my doubt in Computer Networks: "Why is TCP reliable?"');
   });
 
+  it("speaks to the student when a senior opens the DM", () => {
+    expect(doubtPrefill("Computer Networks", "Why is TCP reliable?", false))
+      .toBe('About your doubt in Computer Networks: "Why is TCP reliable?"');
+  });
+
   it("shortens very long doubts", () => {
     const text = doubtPrefill("CN", "x".repeat(2_000));
     expect(text.length).toBeLessThan(700);

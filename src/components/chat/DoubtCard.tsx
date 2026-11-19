@@ -27,7 +27,7 @@ export function DoubtCard({ doubt, asker, status, sentTime, photo }: {
         {doubt.unit && <span title={doubt.unit} className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-950">
           {doubt.unit.split(":")[0]}
         </span>}
-        <span role="status" className="rounded-full bg-muted px-2 py-0.5 text-xs text-foreground">{label}</span>
+        <span role="status" className={`rounded-full px-2 py-0.5 text-xs ${status === "verified" ? "bg-emerald-600 font-semibold text-white" : "bg-muted text-foreground"}`}>{label}</span>
       </header>
       <p className="text-xs text-muted-foreground">Asked by {asker}</p>
       {doubt.text && <p className="whitespace-pre-wrap wrap-anywhere">{doubt.text}</p>}

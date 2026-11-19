@@ -5,10 +5,12 @@ import { ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BOT_IDS } from "@/lib/nexconn/identities";
-import { MSG, safeParseAnswer } from "@/lib/nexconn/messages";
+import { isSeniorRole } from "@/lib/answers/rules";
+import { MSG, STANDARD_MSG, renderableMessage, safeParseAnswer } from "@/lib/nexconn/messages";
 import { groupMessages, messageDate } from "@/lib/rooms/timeline";
 import type { ChatMessage } from "@/lib/stores/messages";
-import { MessageBubble } from "./MessageBubble";
+import { useProfiles } from "@/lib/stores/profiles";
+import { MessageBubble, type DoubtReplies } from "./MessageBubble";
 import type { TickState } from "./ReadTicks";
 
 export type ScrollAnchor = { id: string; top: number };
@@ -46,6 +48,7 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
   const announcement = useRef<HTMLSpanElement>(null);
   const last = useRef<ChatMessage>(undefined);
   const shown = useRef(false);
+  const profiles = useProfiles((state) => state.profiles);
 
   useLayoutEffect(() => {
     const panel = viewportRef.current;
@@ -76,11 +79,23 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
 
   const messageIds = new Set(messages.map(({ messageId }) => messageId));
   // Nexconn may omit a metadata event for the actor named in the server update.
-  const replies = new Map<string, { doubtId: string; failed: boolean }>();
+  const replies = new Map<string, DoubtReplies>();
   for (const message of messages) {
+    if (message.messageType === STANDARD_MSG.REFERENCE) {
+      const reference = renderableMessage(message.messageType, message.content);
+      if (reference.kind === "reference" && reference.referMsgType === MSG.DOUBT && isSeniorRole(profiles[message.senderUserId]?.role)) {
+        replies.set(reference.referMsgId, { ...replies.get(reference.referMsgId), verified: true });
+      }
+      continue;
+    }
     if (message.senderUserId !== BOT_IDS.TA || message.messageType !== MSG.ANSWER) continue;
     const answer = safeParseAnswer(message.content).data;
-    if (answer?.doubtId) replies.set(answer.doubtMessageId, { doubtId: answer.doubtId, failed: Boolean(answer.failed) });
+    if (!answer?.doubtId) continue;
+    const previous = replies.get(answer.doubtMessageId);
+    replies.set(answer.doubtMessageId, {
+      doubtId: answer.doubtId, replied: true, failed: Boolean(answer.failed),
+      verified: Boolean(previous?.verified || message.metadata.get("ver") === "1"),
+    });
   }
   function quoteTarget(messageId: string) {
     if (!messageIds.has(messageId)) return;
@@ -137,7 +152,7 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
               return (
                 <Fragment key={message.messageId}>
                   {nextDay && messageDate(message.sentTime) && <li className="my-5 flex items-center gap-3 text-xs font-medium text-muted-foreground before:h-px before:flex-1 before:bg-[#e9e7f4] after:h-px after:flex-1 after:bg-[#e9e7f4]">{messageDate(message.sentTime)}</li>}
-                  <li data-message-id={message.messageId} tabIndex={-1} className={grouped ? "mt-0.5" : "mt-3 first:mt-0"}>
+                  <li data-message-id={message.messageId} tabIndex={-1} className={`rounded-2xl transition-colors duration-700 data-highlighted:bg-amber-100/80 data-highlighted:ring-2 data-highlighted:ring-amber-400 ${grouped ? "mt-0.5" : "mt-3 first:mt-0"}`}>
                     <MessageBubble message={message} roomId={roomId} quoteTarget={quoteTarget} reply={replies.get(message.messageId)} own={message.senderUserId === userId} grouped={grouped}
                       receipt={message.senderUserId === userId ? receiptFor?.(message) : undefined}
                       retry={connected && message.messageId.startsWith("local:") ? () => onRetry(message.messageId) : undefined} />

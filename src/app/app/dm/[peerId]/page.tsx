@@ -23,6 +23,18 @@ async function findPeer(peerId: string): Promise<DmPeer | null> {
   };
 }
 
+/** A senior opening a DM from the inbox quotes the student's doubt, not their own. */
+async function askedByActor(roomId: string, doubtMessageId: string, profileId: string) {
+  const { data, error } = await adminSupabase().from("doubts").select("asker_id")
+    .eq("room_id", roomId).eq("message_id", doubtMessageId).maybeSingle<{ asker_id: string }>();
+  if (error) {
+    // The wording of a prefill is not worth failing the page over.
+    console.warn("Could not look up the doubt asker", { code: error.code });
+    return true;
+  }
+  return !data || data.asker_id === profileId;
+}
+
 export default async function DirectMessagePage({ params, searchParams }: {
   params: Promise<{ peerId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -42,7 +54,9 @@ export default async function DirectMessagePage({ params, searchParams }: {
   const roomId = typeof query.room === "string" && chatId.test(query.room) ? query.room : null;
   const doubtMessageId = typeof query.doubt === "string" && messageId.test(query.doubt) ? query.doubt : null;
   const [room] = roomId && doubtMessageId ? await roomsForActor(actor, roomId) : [];
-  const doubt = room && doubtMessageId ? { roomId: room.id, roomTitle: room.title, doubtMessageId } : undefined;
+  const doubt = room && doubtMessageId
+    ? { roomId: room.id, roomTitle: room.title, doubtMessageId, own: await askedByActor(room.id, doubtMessageId, actor.profile.id) }
+    : undefined;
 
   return (
     <main className="flex min-h-0 flex-1 flex-col">

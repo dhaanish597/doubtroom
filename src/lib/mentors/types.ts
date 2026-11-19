@@ -19,8 +19,8 @@ export function dmHref(peerId: string, context?: { roomId?: string; doubtMessage
 
 const QUOTE_LIMIT = 600;
 
-/** Composer text for a DM that started from a doubt card. */
-export function doubtPrefill(roomTitle: string, text: string) {
+/** Composer text for a DM that started from a doubt. Seniors writing to the asker say "your". */
+export function doubtPrefill(roomTitle: string, text: string, own = true) {
   const quote = text.length > QUOTE_LIMIT ? `${text.slice(0, QUOTE_LIMIT - 1)}…` : text;
-  return `About my doubt in ${roomTitle}: "${quote}"`;
+  return `About ${own ? "my" : "your"} doubt in ${roomTitle}: "${quote}"`;
 }

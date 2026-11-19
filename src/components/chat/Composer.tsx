@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
-import { AtSign, ImagePlus, Send, X } from "lucide-react";
+import { AtSign, GraduationCap, ImagePlus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { doubtImageExtensions, doubtImageLimit, isDoubtImageType } from "@/lib/rooms/doubt-images";
 import { BOT_IDS } from "@/lib/nexconn/identities";
@@ -13,9 +13,11 @@ const TA = { userId: BOT_IDS.TA, name: "TA (DoubtRoom TA)" };
 export type SendDraft =
   | { kind: "chat"; text: string; mentions: string[] }
   | { kind: "photo"; file: File }
-  | { kind: "doubt"; doubtId: string; text: string; unit?: string; file?: File };
+  | { kind: "doubt"; doubtId: string; text: string; unit?: string; file?: File }
+  /** A senior's reply to the doubt in `reply`. */
+  | { kind: "answer"; text: string };
 
-export function Composer({ roomId, units, allowDoubts, connected, progress, onSend, allowMentions = true, prefill = "", onInput }: {
+export function Composer({ roomId, units, allowDoubts, connected, progress, onSend, allowMentions = true, prefill = "", onInput, reply }: {
   roomId: string;
   units: string[];
   allowDoubts: boolean;
@@ -26,6 +28,8 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   /** Fills an empty composer once, for example with a quoted doubt. */
   prefill?: string;
   onInput?: () => void;
+  /** Senior answer mode: the next message replies to this doubt. */
+  reply?: { quotedText: string; onCancel: () => void } | null;
 }) {
   const [draft, setDraft] = useState(prefill);
   const [appliedPrefill, setAppliedPrefill] = useState(prefill);
@@ -46,11 +50,13 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   const requestedCaret = useRef<number | null>(null);
   const attach = useRef<HTMLInputElement>(null);
   const memberRequest = useRef<AbortController | null>(null);
-  const mention = allowMentions && !dismissed && mode === "chat" ? mentionAt(draft, cursor) : null;
+  const answering = Boolean(reply);
+  const mention = allowMentions && !answering && !dismissed && mode === "chat" ? mentionAt(draft, cursor) : null;
   const pickerOpen = Boolean(mention && connected);
   const options = mention ? members.filter(({ name }) => name.toLowerCase().includes(mention.query.toLowerCase())) : [];
 
   useEffect(() => () => memberRequest.current?.abort(), []);
+  useEffect(() => { if (answering) input.current?.focus(); }, [answering, reply?.quotedText]);
   useLayoutEffect(() => {
     const caret = requestedCaret.current;
     if (caret === null) return;
@@ -107,6 +113,13 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
     event?.preventDefault();
     if (!connected || progress !== null) return;
     const text = draft.trim();
+    if (answering) {
+      if (!text) return;
+      onSend({ kind: "answer", text });
+      setDraft("");
+      setCursor(0);
+      return;
+    }
     if (mode === "doubt") {
       if ((!text && !file) || (units.length && !unit)) return;
       if (file && !isDoubtImageType(file.type)) {
@@ -140,14 +153,21 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
     <div className="shrink-0 border-t border-[#e9e7f4] bg-background px-2.5 py-2 sm:px-5">
       <form aria-label="Send a message" onSubmit={submit} className="mx-auto max-w-3xl space-y-1">
         <div className="flex items-center justify-between gap-1">
-          {allowDoubts && <div className="flex rounded-full bg-[#f2f0fb] p-0.5" role="group" aria-label="Compose mode">
+          {reply && (
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border-s-4 border-emerald-600 bg-emerald-50 py-1 pl-2 text-sm text-emerald-950">
+              <GraduationCap aria-hidden="true" className="size-4 shrink-0" />
+              <p className="min-w-0 flex-1"><span className="font-semibold">Senior answer to </span><span className="line-clamp-1 wrap-anywhere">{reply.quotedText}</span></p>
+              <Button type="button" variant="ghost" aria-label="Cancel senior answer" className="size-11 shrink-0" onClick={reply.onCancel}><X aria-hidden="true" /></Button>
+            </div>
+          )}
+          {allowDoubts && !answering && <div className="flex rounded-full bg-[#f2f0fb] p-0.5" role="group" aria-label="Compose mode">
             {(["chat", "doubt"] as const).map((option) => (
               <Button key={option} type="button" variant="ghost" aria-pressed={mode === option} className={`h-11 rounded-full px-3 capitalize ${mode === option ? "bg-white text-primary shadow-xs" : "text-muted-foreground"}`} onClick={() => { setMode(option); setError(""); }}>{option}</Button>
             ))}
           </div>}
           {progress !== null && <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground"><label htmlFor="room-upload" className="sr-only">Image upload</label><progress id="room-upload" max={100} value={progress} className="h-2 w-14 accent-primary sm:w-24" /><span>{Math.round(progress)}%</span></div>}
         </div>
-        {mode === "doubt" && units.length > 0 && (
+        {mode === "doubt" && !answering && units.length > 0 && (
           <label className="flex items-center gap-2 text-sm font-medium">
             Unit
             <select className="min-h-11 min-w-0 flex-1 rounded-lg border bg-background px-2" value={unit} onChange={(event) => setUnit(event.target.value)}>
@@ -172,9 +192,10 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
             setError("");
             setFile(selected);
           }} />
-          <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Attach a photo" disabled={!connected || progress !== null} onClick={() => attach.current?.click()}><ImagePlus aria-hidden="true" /></Button>
-          {mode === "chat" && allowMentions && <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Mention someone" disabled={!connected} onClick={insertMention}><AtSign aria-hidden="true" /></Button>}
-          <textarea ref={input} rows={1} aria-label={mode === "doubt" ? "What’s your doubt?" : "Message"} placeholder={mode === "doubt" ? "What’s your doubt?" : "Write a message"} value={draft} maxLength={2000} disabled={!connected}
+          <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Attach a photo" disabled={!connected || progress !== null || answering} onClick={() => attach.current?.click()}><ImagePlus aria-hidden="true" /></Button>
+          {mode === "chat" && allowMentions && !answering && <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Mention someone" disabled={!connected} onClick={insertMention}><AtSign aria-hidden="true" /></Button>}
+          <textarea ref={input} rows={1} aria-label={answering ? "Your answer" : mode === "doubt" ? "What’s your doubt?" : "Message"}
+            placeholder={answering ? "Write a better answer" : mode === "doubt" ? "What’s your doubt?" : "Write a message"} value={draft} maxLength={2000} disabled={!connected}
             onChange={(event) => edit(event.target.value, event.target.selectionStart)} onSelect={(event) => setCursor(event.currentTarget.selectionStart)}
             onKeyDown={(event) => {
               if (event.key === "Escape") setDismissed(true);
@@ -185,7 +206,8 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
             }}
             className="min-h-11 min-w-0 flex-1 field-sizing-content resize-none overflow-auto rounded-lg px-1 py-2.5 text-base leading-6 outline-none [max-height:7.5rem] placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-primary/45"
           />
-          <Button type="submit" aria-label={mode === "doubt" ? "Post doubt" : file ? "Send photo" : "Send message"} className="h-11 min-w-11 shrink-0 rounded-xl px-2.5" disabled={!connected || progress !== null || (!draft.trim() && !file) || (mode === "doubt" && units.length > 0 && !unit)}>
+          <Button type="submit" aria-label={answering ? "Post senior answer" : mode === "doubt" ? "Post doubt" : file ? "Send photo" : "Send message"} className="h-11 min-w-11 shrink-0 rounded-xl px-2.5"
+            disabled={!connected || progress !== null || (answering ? !draft.trim() : (!draft.trim() && !file) || (mode === "doubt" && units.length > 0 && !unit))}>
             <Send aria-hidden="true" /><span className="hidden sm:inline">Send</span>
           </Button>
         </div>

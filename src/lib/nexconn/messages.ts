@@ -92,6 +92,7 @@ export const STANDARD_MSG = {
   TEXT: "RC:TxtMsg",
   IMAGE: "RC:ImgMsg",
   FILE: "RC:FileMsg",
+  REFERENCE: "RC:ReferenceMsg",
 } as const;
 
 export function mediaUrl(value: unknown) {
@@ -109,6 +110,25 @@ const textSchema = z.object({ text: z.string(), mentionedInfo: z.object({
 }).optional() });
 const imageSchema = z.object({ remoteUrl: z.string(), thumbnailBase64: z.string().optional() });
 const fileSchema = z.object({ remoteUrl: z.string(), name: z.string(), size: z.number().finite().nonnegative() });
+// Matches the installed SDK's ReferenceMessageContent (reply / quote).
+const referenceSchema = z.object({
+  text: z.string(),
+  referMsgId: z.string().max(128),
+  referMsgType: z.string().max(64),
+  referMsgSenderId: z.string().max(64).optional(),
+  referMsg: z.unknown().optional(),
+});
+
+function quotedPreview(messageType: string, content: unknown) {
+  if (messageType === MSG.DOUBT) {
+    const doubt = safeParseDoubt(content).data;
+    return doubt ? doubt.text || "Photo doubt" : "Doubt";
+  }
+  if (messageType === STANDARD_MSG.TEXT) return textSchema.safeParse(decodeContent(content)).data?.text ?? "Message";
+  if (messageType === MSG.ANSWER) return "TA answer";
+  if (messageType === STANDARD_MSG.IMAGE) return "Photo";
+  return "Quoted message";
+}
 
 export function renderableMessage(messageType: string, content: unknown) {
   switch (messageType) {
@@ -131,6 +151,13 @@ export function renderableMessage(messageType: string, content: unknown) {
       const url = parsed.success && mediaUrl(parsed.data.remoteUrl);
       if (url && parsed.success) return { kind: "file" as const, url, name: parsed.data.name, size: parsed.data.size };
       break;
+    }
+    case STANDARD_MSG.REFERENCE: {
+      const parsed = referenceSchema.safeParse(decodeContent(content));
+      if (!parsed.success) break;
+      const { text, referMsgId, referMsgType, referMsgSenderId, referMsg } = parsed.data;
+      return { kind: "reference" as const, text, referMsgId, referMsgType, referMsgSenderId,
+        quoted: quotedPreview(referMsgType, referMsg) };
     }
     case MSG.DOUBT: {
       const parsed = safeParseDoubt(content);
@@ -158,7 +185,7 @@ export function renderableMessage(messageType: string, content: unknown) {
 
 export function messagePreview(messageType: string, content: unknown) {
   const message = renderableMessage(messageType, content);
-  if (message.kind === "text") return message.text;
+  if (message.kind === "text" || message.kind === "reference") return message.text;
   if (message.kind === "image") return "Photo";
   if (message.kind === "file") return message.name;
   if (message.kind === "card") return message.label;

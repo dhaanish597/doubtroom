@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Clock3, FileDown, ImageOff, RotateCcw, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Check, Clock3, FileDown, GraduationCap, ImageOff, RotateCcw, X } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { deriveDoubtStatus, isSeniorRole, type DoubtEvidence } from "@/lib/answers/rules";
 import { TA_AVATAR } from "@/lib/nexconn/bot-avatar";
 import { BOT_IDS } from "@/lib/nexconn/identities";
 import { MSG, MESSAGE_STATUS, mediaUrl, renderableMessage, safeParseAnswer, safeParseDoubt } from "@/lib/nexconn/messages";
@@ -17,6 +18,9 @@ import { useProfiles } from "@/lib/stores/profiles";
 import { AnswerCard } from "./AnswerCard";
 import { DoubtCard } from "./DoubtCard";
 import { ReadTicks, type TickState } from "./ReadTicks";
+
+/** Answers in the timeline that point at a doubt message. */
+export type DoubtReplies = DoubtEvidence & { doubtId?: string };
 
 function RichText({ text, mentions }: { text: string; mentions: string[] }) {
   const rawLink = "https?://[^\\s<>]+";
@@ -61,6 +65,32 @@ function PhotoView({ url, thumbnail }: { url: string; thumbnail: string }) {
   );
 }
 
+/** A reply quoting another message. Seniors replying to a doubt get the "Senior answer" style. */
+function ReferenceBody({ senior, author, quoted, jumpTo, children }: {
+  senior: boolean; author: string; quoted: string; jumpTo?: () => void; children: ReactNode;
+}) {
+  const quote = <span className="line-clamp-2 wrap-anywhere">{quoted}</span>;
+  return (
+    <div className={`min-w-0 space-y-2 ${senior ? "border-s-4 border-emerald-600 ps-3" : ""}`}>
+      {senior && (
+        <header className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-semibold text-white">
+            <GraduationCap aria-hidden="true" className="size-3.5" />Senior answer
+          </span>
+          <span className="text-xs font-medium text-emerald-900">by {author}</span>
+        </header>
+      )}
+      {jumpTo ? (
+        <button type="button" onClick={jumpTo} aria-label={`Go to quoted message: ${quoted}`}
+          className="block min-h-11 max-w-full rounded-md border-s-2 border-primary/40 bg-muted px-2 text-left text-xs text-muted-foreground hover:text-foreground">
+          {quote}
+        </button>
+      ) : <p className="rounded-md border-s-2 border-primary/40 bg-muted p-2 text-xs text-muted-foreground">{quote}</p>}
+      {children}
+    </div>
+  );
+}
+
 function fileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -70,7 +100,7 @@ function fileSize(bytes: number) {
 export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarget, reply, receipt }: {
   message: ChatMessage; roomId: string; own: boolean; grouped: boolean; retry?: () => void;
   receipt?: TickState;
-  reply?: { doubtId: string; failed: boolean };
+  reply?: DoubtReplies;
   quoteTarget?: (messageId: string) => (() => void) | undefined;
 }) {
   const profile = useProfiles((state) => state.profiles[message.senderUserId]);
@@ -80,8 +110,10 @@ export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarge
   const answer = message.messageType === MSG.ANSWER && message.senderUserId === BOT_IDS.TA ? safeParseAnswer(message.content).data : undefined;
   const boundDoubtId = message.metadata.get("did");
   const status = boundDoubtId && boundDoubtId !== doubt?.doubtId ? undefined : message.metadata.get("st");
-  const doubtStatus = (!status || status === "open") && reply?.doubtId === doubt?.doubtId && reply
-    ? (reply.failed ? "failed" : "ai") : status;
+  // TA answers must name this doubt. Senior replies match by the quoted message ID alone.
+  const evidence = reply && (!reply.doubtId || reply.doubtId === doubt?.doubtId) ? reply : undefined;
+  const doubtStatus = deriveDoubtStatus(status, evidence);
+  const senior = content.kind === "reference" && content.referMsgType === MSG.DOUBT && isSeniorRole(profile?.role);
   const doubtPhoto = doubt?.imageUrl && isRoomDoubtImage(publicEnv.NEXT_PUBLIC_SUPABASE_URL, roomId, doubt.doubtId, doubt.imageUrl)
     ? doubt.imageUrl : undefined;
   const displayName = profile?.name || (message.senderUserId === BOT_IDS.TA ? "DoubtRoom TA" : "Room member");
@@ -104,6 +136,11 @@ export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarge
         {!own && !grouped && !answer && <p className="mb-1 truncate px-1 text-xs font-semibold text-foreground/80">{displayName}</p>}
         <div className={`inline-block max-w-full rounded-2xl px-3.5 py-2.5 text-left text-sm leading-relaxed ${own ? "bg-primary/10 text-[#241c83]" : "border border-[#e9e7f4] bg-card text-card-foreground"} ${failed ? "ring-1 ring-destructive/50" : ""}`}>
           {content.kind === "text" && <RichText text={content.text} mentions={mentionLabels} />}
+          {content.kind === "reference" && (
+            <ReferenceBody senior={senior} author={displayName} quoted={content.quoted} jumpTo={quoteTarget?.(content.referMsgId)}>
+              <RichText text={content.text} mentions={[]} />
+            </ReferenceBody>
+          )}
           {content.kind === "image" && <PhotoView key={content.url} url={content.url} thumbnail={content.thumbnail} />}
           {content.kind === "file" && (
             <a href={content.url} download={content.name} target="_blank" rel="noreferrer" className="flex min-h-11 items-center gap-2 rounded-lg focus-visible:outline-2">

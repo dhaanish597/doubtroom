@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   MSG,
+  messagePreview,
+  renderableMessage,
   safeParseAnnounce,
   safeParseAnswer,
   safeParseDoubt,
@@ -64,5 +66,25 @@ describe("custom Nexconn messages", () => {
     expect(safeParseAnnounce({ ...announce, urgent: "true" }).success).toBe(false);
     expect(safeParseRecap({ ...recap, items: [{ ...recap.items[0], verifiedBy: "demo_mentor" }] }).success).toBe(true);
     expect(safeParseRecap({ ...recap, items: [{ question: "Missing fields" }] }).success).toBe(false);
+  });
+});
+
+describe("reference (reply) messages", () => {
+  it("renders a senior reply that quotes a doubt", () => {
+    const content = {
+      text: "Think of TCP as numbered parcels with receipts.",
+      referMsgId: "MSG-1", referMsgType: MSG.DOUBT, referMsgSenderId: "u_asker",
+      referMsg: { v: 1, doubtId: "d1", text: "Why is TCP reliable?" },
+    };
+    expect(renderableMessage("RC:ReferenceMsg", JSON.stringify(content))).toMatchObject({
+      kind: "reference", referMsgId: "MSG-1", referMsgType: MSG.DOUBT, quoted: "Why is TCP reliable?",
+    });
+    expect(messagePreview("RC:ReferenceMsg", content)).toBe(content.text);
+  });
+
+  it("falls back for unreadable quotes and rejects malformed replies", () => {
+    expect(renderableMessage("RC:ReferenceMsg", { text: "Hi", referMsgId: "M", referMsgType: "RC:Unknown" }))
+      .toMatchObject({ kind: "reference", quoted: "Quoted message" });
+    expect(renderableMessage("RC:ReferenceMsg", { text: "Hi" })).toEqual({ kind: "unsupported" });
   });
 });

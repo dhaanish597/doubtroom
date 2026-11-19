@@ -185,7 +185,7 @@ export function DirectChat({ peerId, peerName, doubt }: { peerId: string; peerNa
       {sendError && <p role="alert" className="border-t px-4 py-2 text-sm text-destructive">{sendError}</p>}
       <Composer roomId={peerId} units={NO_UNITS} allowDoubts={false} allowMentions={false} connected={connected} progress={progress}
         prefill={prefill} onInput={announceTyping} onSend={(draft) => {
-          if (!userId || draft.kind === "doubt") return;
+          if (!userId || draft.kind === "doubt" || draft.kind === "answer") return;
           void send({ owner: userId, draft, message: {
             messageId: `local:${nanoid()}`, messageType: STANDARD_MSG.TEXT, senderUserId: userId,
             sentStatus: MESSAGE_STATUS.SENDING, sentTime: Date.now(),
