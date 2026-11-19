@@ -9,7 +9,7 @@ import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "
 import { deriveDoubtStatus, isSeniorRole, type DoubtEvidence } from "@/lib/answers/rules";
 import { TA_AVATAR } from "@/lib/nexconn/bot-avatar";
 import { BOT_IDS } from "@/lib/nexconn/identities";
-import { MSG, MESSAGE_STATUS, mediaUrl, renderableMessage, safeParseAnswer, safeParseDoubt } from "@/lib/nexconn/messages";
+import { MSG, MESSAGE_STATUS, mediaUrl, renderableMessage, safeParseAnswer, safeParseDoubt, safeParseRecap } from "@/lib/nexconn/messages";
 import { publicEnv } from "@/lib/public-env";
 import { isRoomDoubtImage } from "@/lib/rooms/doubt-images";
 import { mentionPattern, messageTime } from "@/lib/rooms/timeline";
@@ -18,6 +18,7 @@ import { useProfiles } from "@/lib/stores/profiles";
 import { AnswerCard } from "./AnswerCard";
 import { DoubtCard } from "./DoubtCard";
 import { ReadTicks, type TickState } from "./ReadTicks";
+import { RecapCard } from "./RecapCard";
 
 /** Answers in the timeline that point at a doubt message. */
 export type DoubtReplies = DoubtEvidence & { doubtId?: string };
@@ -108,6 +109,7 @@ export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarge
   const content = renderableMessage(message.messageType, message.content);
   const doubt = message.messageType === MSG.DOUBT ? safeParseDoubt(message.content).data : undefined;
   const answer = message.messageType === MSG.ANSWER && message.senderUserId === BOT_IDS.TA ? safeParseAnswer(message.content).data : undefined;
+  const recap = message.messageType === MSG.RECAP && message.senderUserId === BOT_IDS.TA ? safeParseRecap(message.content).data : undefined;
   const boundDoubtId = message.metadata.get("did");
   const status = boundDoubtId && boundDoubtId !== doubt?.doubtId ? undefined : message.metadata.get("st");
   // TA answers must name this doubt. Senior replies match by the quoted message ID alone.
@@ -153,7 +155,8 @@ export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarge
             photo={doubtPhoto && <PhotoView key={doubtPhoto} url={doubtPhoto} thumbnail={doubtPhoto} />} />}
           {answer && <AnswerCard answer={answer} messageId={message.messageId} roomId={roomId}
             metadata={message.metadata} jumpTo={quoteTarget?.(answer.doubtMessageId)} />}
-          {content.kind === "card" && message.messageType !== MSG.DOUBT && message.messageType !== MSG.ANSWER && <div className="border-s-2 border-accent ps-3"><p className="font-semibold">{content.label}</p><p className="line-clamp-4 whitespace-pre-wrap wrap-anywhere">{content.text}</p></div>}
+          {recap && <RecapCard recap={recap} roomId={roomId} jumpTo={quoteTarget} />}
+          {content.kind === "card" && message.messageType !== MSG.DOUBT && message.messageType !== MSG.ANSWER && !recap && <div className="border-s-2 border-accent ps-3"><p className="font-semibold">{content.label}</p><p className="line-clamp-4 whitespace-pre-wrap wrap-anywhere">{content.text}</p></div>}
           {(content.kind === "unsupported" || (message.messageType === MSG.ANSWER && !answer)) && <p className="text-muted-foreground">Unsupported message</p>}
         </div>
         <div className={`flex min-h-5 flex-wrap items-center gap-1.5 px-1 text-[0.6875rem] text-muted-foreground ${own ? "justify-end" : ""}`}>

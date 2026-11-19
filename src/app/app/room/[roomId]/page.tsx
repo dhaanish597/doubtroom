@@ -1,4 +1,5 @@
 import { GroupChat } from "@/components/chat/GroupChat";
+import { EveBanner } from "@/components/rooms/EveBanner";
 import { RoomProvider } from "@/components/rooms/RoomContext";
 import { RoomHeader } from "@/components/rooms/RoomHeader";
 import { viewerRoomState } from "@/lib/answers/server";
@@ -25,6 +26,7 @@ export default async function RoomPage({ params, searchParams }: {
   return (
     <main data-room-chat className="flex min-h-0 flex-1 flex-col">
       <RoomHeader room={room} tab="chat" />
+      {room.eve && <EveBanner eve={room.eve} />}
       <RoomProvider value={{ roomId: room.id, title: room.title, courseCode: room.courseCode, ...viewer }}>
         <GroupChat key={room.id} roomId={room.id} title={room.title} initialUnits={room.units} focusMessageId={focusMessageId} />
       </RoomProvider>
