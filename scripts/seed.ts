@@ -1,4 +1,5 @@
 import catalog from "../data/catalog.json";
+import { seedProfanityWords } from "./seed-moderation";
 import { TA_AVATAR } from "@/lib/nexconn/bot-avatar";
 import { BOT_IDS, DEMO_ROOM_ID } from "@/lib/nexconn/ids";
 import { issueToken, joinGroup, NexconnError } from "@/lib/nexconn/server";
@@ -8,6 +9,7 @@ import { adminSupabase } from "@/lib/supabase/admin";
 import { loadDemoScript, seedDemoConversation } from "./demo-seed";
 
 async function seed() {
+  console.info(await seedProfanityWords());
   const cohorts = catalog.depts.flatMap(({ dept, years }) => years.map((year) => ({ dept, ...year })));
   const courses = cohorts.flatMap(({ dept, year, semester, courses }) =>
     courses.map(({ code, title, examDate, units }) => ({ code, title, dept, year, semester, exam_date: examDate, units })),

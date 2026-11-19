@@ -14,10 +14,12 @@ import { channelKeyFor, useMessages, type ChatMessage } from "@/lib/stores/messa
 import { loadProfiles } from "@/lib/stores/profiles";
 import { markRoomPreviewRead, recordRoomMessage, useRooms } from "@/lib/stores/rooms";
 import { useTourPrefill } from "@/lib/stores/tour";
+import { useRoomContext } from "@/components/rooms/RoomContext";
 import { Composer, type SendDraft } from "./Composer";
 import { FocusedMessage } from "./FocusedMessage";
 import { MessageList } from "./MessageList";
 import { useChannelHistory } from "./useChannelHistory";
+import { useGroupReceipts } from "./useGroupReceipts";
 import { useJumpToMessage } from "./useJumpToMessage";
 
 const EMPTY_MESSAGES: ChatMessage[] = [];
@@ -139,6 +141,9 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false,
       .sort((a, b) => a.sentTime - b.sentTime);
   }, [received, pending, userId, historyFloor]);
 
+  // Phase 11A: announcement read receipts (acks for members, counts for the author and admins).
+  const isRoomAdmin = useRoomContext()?.moderation?.isAdmin ?? false;
+  useGroupReceipts({ roomId, userId, connected: connected && !dev, messages, channel, viewport, trackAll: isRoomAdmin });
   const loadOlder = useCallback(() => loadMore(() => useConnection.getState().userId === userId), [loadMore, userId]);
   const jump = useJumpToMessage({
     targetId: focusMessageId, viewport, messageCount: messages.length, ready, loading,

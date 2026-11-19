@@ -54,7 +54,7 @@ const GROUP_NOT_FOUND = 25410;
 const ALREADY_MEMBER = 25412;
 let loggedIssueResponse = false;
 
-async function request<T extends { code: number }>(
+export async function request<T extends { code: number }>(
   operation: string,
   run: () => Promise<{ data: T }>,
 ): Promise<T> {

@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
-import { AtSign, GraduationCap, ImagePlus, Send, X } from "lucide-react";
+import { AtSign, GraduationCap, ImagePlus, Megaphone, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRoomContext } from "@/components/rooms/RoomContext";
 import { doubtImageExtensions, doubtImageLimit, isDoubtImageType } from "@/lib/rooms/doubt-images";
 import { BOT_IDS } from "@/lib/nexconn/identities";
 import { mentionAt, mentionPattern } from "@/lib/rooms/timeline";
 import type { RoomMember } from "@/lib/rooms/types";
+import { AnnounceComposer } from "./AnnounceComposer";
 import { MentionPicker } from "./MentionPicker";
+import { MutedNotice, useMutedUntil } from "./MuteGate";
 
 const TA = { userId: BOT_IDS.TA, name: "TA (DoubtRoom TA)" };
 export type SendDraft =
@@ -60,6 +63,11 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   const attach = useRef<HTMLInputElement>(null);
   const memberRequest = useRef<AbortController | null>(null);
   const answering = Boolean(reply);
+  // Phase 11A: reps and admins can switch to Announcement mode. Muted members see a notice instead.
+  const room = useRoomContext();
+  const canAnnounce = allowDoubts && room?.roomId === roomId && Boolean(room.moderation?.canAnnounce);
+  const [announcing, setAnnouncing] = useState(false);
+  const mutedUntil = useMutedUntil(roomId);
   const mention = allowMentions && !answering && !dismissed && mode === "chat" ? mentionAt(draft, cursor) : null;
   const pickerOpen = Boolean(mention && connected);
   const options = mention ? members.filter(({ name }) => name.toLowerCase().includes(mention.query.toLowerCase())) : [];
@@ -158,6 +166,11 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
     setDismissed(true);
   }
 
+  if (mutedUntil) return <MutedNotice until={mutedUntil} />;
+  if (announcing && canAnnounce && !answering) {
+    return <AnnounceComposer roomId={roomId} connected={connected} onClose={() => setAnnouncing(false)} />;
+  }
+
   return (
     <div className="shrink-0 border-t border-[#e9e7f4] bg-background px-2.5 py-2 sm:px-5">
       <form aria-label="Send a message" onSubmit={submit} className="mx-auto max-w-3xl space-y-1">
@@ -173,6 +186,7 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
             {(["chat", "doubt"] as const).map((option) => (
               <Button key={option} type="button" variant="ghost" aria-pressed={mode === option} className={`h-11 rounded-full px-3 capitalize ${mode === option ? "bg-white text-primary shadow-xs" : "text-muted-foreground"}`} onClick={() => { setMode(option); setError(""); }}>{option}</Button>
             ))}
+            {canAnnounce && <Button type="button" variant="ghost" aria-pressed={false} className="h-11 rounded-full px-3 text-muted-foreground" onClick={() => setAnnouncing(true)}><Megaphone aria-hidden="true" /><span className="sr-only sm:not-sr-only">Announce</span></Button>}
           </div>}
           {progress !== null && <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground"><label htmlFor="room-upload" className="sr-only">Image upload</label><progress id="room-upload" max={100} value={progress} className="h-2 w-14 accent-primary sm:w-24" /><span>{Math.round(progress)}%</span></div>}
         </div>
