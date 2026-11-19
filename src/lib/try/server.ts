@@ -9,18 +9,23 @@ const HOUR_MS = 60 * 60 * 1000;
 
 /**
  * Records this attempt first, then counts, so parallel requests from one address
- * cannot all slip under the limit.
+ * cannot all slip under the limit. Refused attempts are marked and no longer count,
+ * so retrying while limited does not extend the lockout.
  */
 export async function allowTryAttempt(ip: string, secret: string, now = new Date()): Promise<boolean> {
   const db = adminSupabase();
   const ipHash = hashIp(ip, secret);
-  const recorded = await db.from("events").insert({ name: TRY_ATTEMPT_EVENT, props: { ip: ipHash } });
+  const recorded = await db.from("events").insert({ name: TRY_ATTEMPT_EVENT, props: { ip: ipHash } })
+    .select("id").single<{ id: string }>();
   if (recorded.error) throw recorded.error;
   const { count, error } = await db.from("events").select("id", { count: "exact", head: true })
-    .eq("name", TRY_ATTEMPT_EVENT).eq("props->>ip", ipHash)
+    .eq("name", TRY_ATTEMPT_EVENT).eq("props->>ip", ipHash).is("props->>rejected", null)
     .gte("created_at", new Date(now.getTime() - HOUR_MS).toISOString());
   if (error) throw error;
-  return (count ?? 0) <= TRY_ATTEMPTS_PER_HOUR;
+  if (count !== null && count <= TRY_ATTEMPTS_PER_HOUR) return true;
+  const marked = await db.from("events").update({ props: { ip: ipHash, rejected: true } }).eq("id", recorded.data.id);
+  if (marked.error) throw marked.error;
+  return false;
 }
 
 export async function demoRoomReady(): Promise<boolean> {
