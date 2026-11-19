@@ -1,0 +1,2 @@
+# Fixed synthetic Vitest input for the cron authorization test.
+76df2c4f638adbc6529975904e0fbc383282671e:tests/cron-auth.test.ts:generic-api-key:10
