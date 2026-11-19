@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { getPageActor } from "@/lib/auth/actor";
+import { InstallApp } from "./install-app";
 import { SignOutButton } from "./sign-out";
 
 export default async function MePage() {
@@ -18,6 +19,11 @@ export default async function MePage() {
           {dept && year && section ? ` · ${dept} Year ${year} · Section ${section}` : ""}
         </p>
         {actor.kind === "user" && <SignOutButton />}
+      </section>
+      <section className="mt-4 space-y-3 rounded-xl border p-5" aria-labelledby="install-heading">
+        <h2 id="install-heading" className="font-semibold">Install DoubtRoom</h2>
+        <p className="text-sm text-muted-foreground">Add it to your home screen for one-tap access during exams.</p>
+        <InstallApp />
       </section>
     </main>
   );

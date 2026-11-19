@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { track } from "@/lib/analytics";
 import type { ClassSelection, CourseLocation } from "@/lib/rooms/definitions";
 
 type Catalog = { dept: string; years: { year: number; sections: string[] }[] }[];
@@ -36,6 +37,17 @@ export function OnboardingForm({ catalog, courses, pending }: {
     if (step > 1) heading.current?.focus();
   }, [step]);
 
+  // Reaching onboarding means a new Google account. Count it once per browser session.
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("dr_signed_up")) return;
+      sessionStorage.setItem("dr_signed_up", "1");
+    } catch {
+      // Storage can be blocked; the event may then repeat on a reload.
+    }
+    track("signed_up");
+  }, []);
+
   async function request(validate = false) {
     const response = await fetch(validate ? "/api/onboarding?validate=1" : "/api/onboarding", {
       method: "POST",
@@ -62,7 +74,8 @@ export function OnboardingForm({ catalog, courses, pending }: {
         setStep(3);
         return;
       }
-      await request();
+      const result = await request();
+      track("onboarded", { role: result.role ?? "student", year });
       router.replace("/app");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Could not set up your rooms");

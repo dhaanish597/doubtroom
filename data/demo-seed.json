@@ -1,1 +1,61 @@
-[]
+{
+  "roomId": "demo_cn",
+  "courseCode": "CS3591",
+  "messages": [
+    {
+      "key": "announce_model_exam",
+      "kind": "announce",
+      "from": "demo_mentor",
+      "title": "CN model exam moved to Monday",
+      "body": "The Computer Networks model exam is now on Monday at 9:30 a.m. in Block B. Portions are Units 1 to 3. Bring your calculator for the subnetting questions."
+    },
+    {
+      "key": "doubt_flow_congestion",
+      "kind": "doubt",
+      "from": "demo_priya",
+      "doubtId": "3d4f46aa-4b64-4d0a-b562-408ae2488f1b",
+      "unit": "Unit 2: TRANSPORT LAYER",
+      "text": "What is the difference between flow control and congestion control in TCP? Both seem to slow down the sender."
+    },
+    {
+      "key": "answer_flow_congestion",
+      "kind": "answer",
+      "doubt": "doubt_flow_congestion",
+      "answerId": "3168498e-52be-43a9-9900-829d884d3183",
+      "markdown": "Both slow the sender down, but they protect different things.\n\n- **Flow control** protects the **receiver**. The receiver advertises its free buffer as the receive window (`rwnd`), so a fast sender never overflows a slow receiver.\n- **Congestion control** protects the **network**. The sender keeps its own congestion window (`cwnd`) and shrinks it when it sees loss or duplicate ACKs.\n\nTCP sends at most `min(rwnd, cwnd)` bytes without an acknowledgement.",
+      "examTip": "Draw the slow start and congestion avoidance graph, with cwnd against RTT. It is worth easy marks.",
+      "verifiedBy": "demo_mentor",
+      "verName": "Arun (IV CSE)",
+      "upvotedBy": ["demo_priya", "demo_mentor"]
+    },
+    {
+      "key": "arun_verify_note",
+      "kind": "text",
+      "from": "demo_mentor",
+      "text": "Verified 👍 One more point: rwnd travels in every TCP header, but cwnd never leaves the sender. That line got me 2 marks last year."
+    },
+    {
+      "key": "priya_thanks",
+      "kind": "text",
+      "from": "demo_priya",
+      "text": "Thanks Arun! That min(rwnd, cwnd) line makes it click."
+    },
+    {
+      "key": "doubt_dns_udp",
+      "kind": "doubt",
+      "from": "demo_priya",
+      "doubtId": "305b4fe0-b3a0-4233-b456-ef3d69cc46bd",
+      "unit": "Unit 1: INTRODUCTION AND APPLICATION LAYER",
+      "text": "Why does DNS use UDP instead of TCP?"
+    },
+    {
+      "key": "answer_dns_udp",
+      "kind": "answer",
+      "doubt": "doubt_dns_udp",
+      "answerId": "721784b8-54a0-4e8c-85df-b05b36a017e8",
+      "markdown": "A DNS lookup is one small question and one small answer, so speed matters more than a connection.\n\n1. **No handshake.** UDP skips TCP's 3-way handshake, so a lookup takes one round trip instead of two.\n2. **Less server load.** A DNS server answers millions of queries without keeping connection state.\n3. **The client retries.** If a reply is lost, the resolver simply asks again.\n\nDNS still uses **TCP on port 53** for zone transfers and for replies larger than 512 bytes.",
+      "examTip": "Mention the TCP exception for zone transfers. Examiners look for it.",
+      "upvotedBy": ["demo_priya"]
+    }
+  ]
+}

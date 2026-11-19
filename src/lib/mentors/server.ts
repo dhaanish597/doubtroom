@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { Actor } from "@/lib/auth/actor";
+import { BOT_IDS } from "@/lib/nexconn/identities";
 import { isUserOnline } from "@/lib/nexconn/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { createPresenceCache } from "./presence-cache";
@@ -51,4 +52,19 @@ export async function presenceForUsers(userIds: string[]): Promise<MentorSummary
     .in("nexconn_user_id", userIds).eq("is_try", false).returns<ProfileRow[]>();
   if (error) throw error;
   return withPresence(data);
+}
+
+/**
+ * Try visitors only ever see Arun, the scripted demo senior. He replies within seconds
+ * through /api/try/mentor-ping, so the sandbox reports him as available.
+ */
+export async function demoMentors(): Promise<MentorSummary[]> {
+  const { data, error } = await adminSupabase().from("profiles").select(profileColumns)
+    .eq("nexconn_user_id", BOT_IDS.DEMO_MENTOR).maybeSingle<ProfileRow>();
+  if (error) throw error;
+  if (!data) return [];
+  return [{
+    nexconnId: data.nexconn_user_id, name: data.display_name, avatar: data.avatar_url,
+    role: "mentor", dept: data.dept, year: data.year, online: true,
+  }];
 }

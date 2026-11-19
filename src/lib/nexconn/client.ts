@@ -5,7 +5,31 @@ import { notifyChannelChange, useConnection, type ChatStatus } from "@/lib/store
 import { channelKeyFor, useMessages } from "@/lib/stores/messages";
 import { resetProfiles } from "@/lib/stores/profiles";
 import { recordRoomMessage, resetRooms } from "@/lib/stores/rooms";
-import { MSG } from "./messages";
+import { identifyAnalytics, track } from "@/lib/analytics";
+import { BOT_IDS } from "./identities";
+import { MSG, safeParseAnswer } from "./messages";
+
+type ReceivedMessage = { messageType: string; senderUserId: string; content: unknown; sentTime: number; channelIdentifier: Parameters<typeof channelKeyFor>[0] };
+const LIVE_WINDOW_MS = 2 * 60 * 1000;
+const MAX_ANSWER_LATENCY_MS = 30 * 60 * 1000;
+let trackedConnection: string | null = null;
+
+/** Reports how long the TA took to answer one of my doubts. Only IDs and timings leave the page. */
+function trackAnswerLatency(messages: readonly ReceivedMessage[], userId: string | null) {
+  if (!userId) return;
+  const now = Date.now();
+  for (const message of messages) {
+    if (message.messageType !== MSG.ANSWER || message.senderUserId !== BOT_IDS.TA || now - message.sentTime > LIVE_WINDOW_MS) continue;
+    const answer = safeParseAnswer(message.content).data;
+    if (!answer || answer.failed) continue;
+    const doubt = useMessages.getState().byChannel[channelKeyFor(message.channelIdentifier)]
+      ?.find((entry) => entry.messageId === answer.doubtMessageId);
+    const latency = doubt && doubt.senderUserId === userId ? message.sentTime - doubt.sentTime : Number.NaN;
+    if (latency >= 0 && latency <= MAX_ANSWER_LATENCY_MS) {
+      track("answer_received", { roomId: message.channelIdentifier.channelId, latency_ms: latency, cached: Boolean(answer.cached) });
+    }
+  }
+}
 
 type ChatSdk = typeof import("@nexconn/chat");
 
@@ -58,6 +82,7 @@ export function initNexconn(): Promise<ChatSdk> {
         }
         store.mergeMessages(messages);
         notifyChannelChange();
+        trackAnswerLatency(messages, userId);
       },
       onMessageMetadataUpdated({ channelIdentifier, messageId, metadata }) {
         if (currentToken) useMessages.getState().mergeMetadata(channelIdentifier, messageId, metadata);
@@ -103,6 +128,11 @@ export function connectNexconn(token: string): Promise<string> {
         throw new Error(`Nexconn connection failed (code ${result.code})`);
       }
       useConnection.setState({ status: "connected", userId, code: null, error: null });
+      if (trackedConnection !== userId) {
+        trackedConnection = userId;
+        identifyAnalytics(userId, userId.startsWith("try_") ? "try" : "user");
+        track("connected");
+      }
       return userId;
     } catch (error) {
       const message = error instanceof Error && /^Nexconn connection failed \(code \d+\)$/.test(error.message)

@@ -12,6 +12,7 @@ import { notifyChannelChange, useConnection } from "@/lib/stores/connection";
 import { channelKeyFor, useMessages, type ChatMessage } from "@/lib/stores/messages";
 import { loadProfiles } from "@/lib/stores/profiles";
 import { markRoomPreviewRead, recordRoomMessage, useRooms } from "@/lib/stores/rooms";
+import { useTourPrefill } from "@/lib/stores/tour";
 import { Composer, type SendDraft } from "./Composer";
 import { MessageList } from "./MessageList";
 import { useChannelHistory } from "./useChannelHistory";
@@ -62,6 +63,12 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
   const uploading = useRef(false);
   const readRunning = useRef(false);
   const shouldClear = useRef(false);
+  const tourPrefill = useTourPrefill((state) => state.prefill?.roomId === roomId ? state.prefill : null);
+
+  // The composer applies the example during render; clearing lets the same example be used again.
+  useEffect(() => {
+    if (tourPrefill) useTourPrefill.getState().clear();
+  }, [tourPrefill]);
 
   useEffect(() => {
     if (dev) return;
@@ -217,7 +224,8 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
           if (item) void send(item);
         }} />
       {taError && <p role="alert" className="border-t px-4 py-2 text-sm text-destructive">{taError}</p>}
-      <Composer roomId={roomId} units={units} allowDoubts={!dev} connected={connected} progress={progress} onSend={(draft) => {
+      <Composer roomId={roomId} units={units} allowDoubts={!dev} connected={connected} progress={progress}
+        prefill={tourPrefill?.text} prefillMode={tourPrefill ? "doubt" : undefined} prefillUnit={tourPrefill?.unit} onSend={(draft) => {
         if (!userId) return;
         void send({ owner: userId, draft, message: {
           messageId: `local:${nanoid()}`, messageType: STANDARD_MSG.TEXT, senderUserId: userId,

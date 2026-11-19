@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { DirectChat } from "@/components/chat/DirectChat";
 import { DmHeader, type DmPeer } from "@/components/dm/DmHeader";
 import { getPageActor } from "@/lib/auth/actor";
+import { canDirectMessage } from "@/lib/auth/sandbox";
+import { BOT_IDS } from "@/lib/nexconn/identities";
 import { roomsForActor } from "@/lib/rooms/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 
@@ -12,14 +14,17 @@ const messageId = /^[A-Za-z0-9_-]{1,64}$/;
 type PeerRow = { nexconn_user_id: string; display_name: string; avatar_url: string | null; role: string; dept: string | null; year: number | null };
 
 async function findPeer(peerId: string): Promise<DmPeer | null> {
-  const { data, error } = await adminSupabase().from("profiles")
+  // The demo senior is a server identity (role bot) that the sandbox presents as a mentor.
+  const demo = peerId === BOT_IDS.DEMO_MENTOR;
+  let query = adminSupabase().from("profiles")
     .select("nexconn_user_id,display_name,avatar_url,role,dept,year")
-    .eq("nexconn_user_id", peerId).eq("is_try", false).neq("role", "bot")
-    .maybeSingle<PeerRow>();
+    .eq("nexconn_user_id", peerId).eq("is_try", false);
+  if (!demo) query = query.neq("role", "bot");
+  const { data, error } = await query.maybeSingle<PeerRow>();
   if (error) throw error;
   return data && {
     nexconnId: data.nexconn_user_id, name: data.display_name, avatar: data.avatar_url,
-    role: data.role, dept: data.dept, year: data.year,
+    role: demo ? "mentor" : data.role, dept: data.dept, year: data.year,
   };
 }
 
@@ -30,11 +35,9 @@ export default async function DirectMessagePage({ params, searchParams }: {
   const actor = await getPageActor();
   if (!actor) redirect("/login");
   if (actor.kind === "user" && !actor.profile.onboarded_at) redirect("/onboarding");
-  // Try visitors message the demo mentor from Phase 9.
-  if (actor.kind === "try") notFound();
-
   const { peerId } = await params;
-  if (!chatId.test(peerId) || peerId === actor.profile.nexconn_user_id) notFound();
+  // Try visitors may only message the demo senior. Real students never reach bots or sandbox users.
+  if (!canDirectMessage(actor.kind, actor.profile.nexconn_user_id, peerId)) notFound();
   const peer = await findPeer(peerId);
   if (!peer) notFound();
 

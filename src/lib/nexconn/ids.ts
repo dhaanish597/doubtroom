@@ -5,9 +5,8 @@ import { z } from "zod";
 const trySuffix = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 10);
 const examDateSchema = z.iso.date();
 
-export { BOT_IDS } from "./identities";
+export { BOT_IDS, DEMO_ROOM_ID } from "./identities";
 
-export const DEMO_ROOM_ID = "demo_cn";
 
 export function userIdFor(authUserId: string): string {
   if (!authUserId) throw new TypeError("An auth user ID is required");

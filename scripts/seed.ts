@@ -5,6 +5,7 @@ import { issueToken, joinGroup, NexconnError } from "@/lib/nexconn/server";
 import { sectionRoom, subjectRoom, type RoomDefinition } from "@/lib/rooms/definitions";
 import { provisionRooms } from "@/lib/rooms/provision";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { loadDemoScript, seedDemoConversation } from "./demo-seed";
 
 async function seed() {
   const cohorts = catalog.depts.flatMap(({ dept, years }) => years.map((year) => ({ dept, ...year })));
@@ -16,10 +17,10 @@ async function seed() {
   }
 
   const db = adminSupabase();
-  const bots: { nexconn_user_id: string; display_name: string; avatar_url: string | null }[] = [
-    { nexconn_user_id: BOT_IDS.TA, display_name: "DoubtRoom TA", avatar_url: TA_AVATAR },
-    { nexconn_user_id: BOT_IDS.DEMO_MENTOR, display_name: "Arun (IV CSE, demo)", avatar_url: null },
-    { nexconn_user_id: BOT_IDS.DEMO_PRIYA, display_name: "Priya (III CSE, demo)", avatar_url: null },
+  const bots: { nexconn_user_id: string; display_name: string; avatar_url: string | null; dept: string | null; year: number | null }[] = [
+    { nexconn_user_id: BOT_IDS.TA, display_name: "DoubtRoom TA", avatar_url: TA_AVATAR, dept: null, year: null },
+    { nexconn_user_id: BOT_IDS.DEMO_MENTOR, display_name: "Arun (IV CSE, demo)", avatar_url: null, dept: "CSE", year: 4 },
+    { nexconn_user_id: BOT_IDS.DEMO_PRIYA, display_name: "Priya (III CSE, demo)", avatar_url: null, dept: "CSE", year: 3 },
   ];
 
   const { data: existing, error: profileError } = await db.from("profiles").select("nexconn_user_id,nexconn_token")
@@ -41,9 +42,13 @@ async function seed() {
   const { error: courseError } = await db.from("courses").upsert(courses);
   if (courseError) throw courseError;
 
+  // The demo room borrows the real CN course so the composer shows units and "Ask a senior" appears.
+  const demoScript = loadDemoScript();
+  if (demoScript.roomId !== DEMO_ROOM_ID) throw new Error(`data/demo-seed.json must target ${DEMO_ROOM_ID}`);
+  const demoCourse = courses.some(({ code }) => code === demoScript.courseCode) ? demoScript.courseCode : null;
   const demo: RoomDefinition = {
     id: DEMO_ROOM_ID, kind: "demo", title: "Demo: Computer Networks",
-    course_code: null, dept: null, year: null, section: null,
+    course_code: demoCourse, dept: null, year: null, section: null,
   };
   const sections = cohorts.flatMap(({ dept, year, sections }) =>
     sections.map((section) => sectionRoom({ dept, year, section })),
@@ -60,7 +65,11 @@ async function seed() {
   const { error: memberError } = await db.from("room_members").upsert(membership, { ignoreDuplicates: true });
   if (memberError) throw memberError;
 
+  const conversation = await seedDemoConversation(profileIds, demoScript);
   console.info(`Seeded ${profileIds.size} bot profiles, ${courses.length} courses, and ${rooms.length} rooms (${sections.length} sections, 1 demo).`);
+  console.info(conversation.delivered
+    ? `Sent ${conversation.delivered} demo messages to ${DEMO_ROOM_ID} (${conversation.skipped} already there).`
+    : `Demo conversation already seeded in ${DEMO_ROOM_ID}. Skipped.`);
 }
 
 void seed().catch((error: unknown) => {
