@@ -71,7 +71,7 @@ export function AnnounceComposer({ roomId, connected, onClose }: { roomId: strin
   }
 
   return (
-    <div className="shrink-0 border-t border-[#e9e7f4] bg-background px-2.5 py-2 sm:px-5">
+    <div className="shrink-0 border-t border-border bg-background px-2.5 py-2 sm:px-5">
       <form aria-label="Post an announcement" onSubmit={submit} className="mx-auto max-w-3xl space-y-2">
         <div className="flex items-center justify-between gap-2">
           <p className="flex items-center gap-1.5 text-sm font-semibold text-amber-900">
@@ -85,13 +85,13 @@ export function AnnounceComposer({ roomId, connected, onClose }: { roomId: strin
           Title
           <input value={title} maxLength={ANNOUNCE_TITLE_MAX} required disabled={!connected} onChange={(event) => setTitle(event.target.value)}
             placeholder="CN internal moved to Friday"
-            className="mt-1 block min-h-11 w-full rounded-lg border bg-white px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-primary/45" />
+            className="mt-1 block min-h-11 w-full rounded-lg border bg-card px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-primary/45" />
         </label>
         <label className="block text-sm font-medium">
           Message
           <textarea value={body} maxLength={ANNOUNCE_BODY_MAX} required rows={3} disabled={!connected} onChange={(event) => setBody(event.target.value)}
             placeholder="Room, time and anything to bring"
-            className="mt-1 block max-h-40 min-h-20 w-full resize-y rounded-lg border bg-white px-3 py-2 text-base leading-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/45" />
+            className="mt-1 block max-h-40 min-h-20 w-full resize-y rounded-lg border bg-card px-3 py-2 text-base leading-6 outline-none focus-visible:ring-2 focus-visible:ring-primary/45" />
         </label>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <label className="flex min-h-11 items-center gap-2 text-sm">

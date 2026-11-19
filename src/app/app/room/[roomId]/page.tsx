@@ -38,7 +38,7 @@ export default async function RoomPage({ params, searchParams }: {
       <RoomProvider value={{ roomId: room.id, title: room.title, courseCode: room.courseCode, ...viewer,
         kind: room.kind, memberCount: room.memberCount, moderation }}>
         <PinnedAnnouncement />
-        <GroupChat key={room.id} roomId={room.id} title={room.title} initialUnits={room.units} focusMessageId={focusMessageId} />
+        <GroupChat language={actor?.profile.lang} key={room.id} roomId={room.id} title={room.title} initialUnits={room.units} focusMessageId={focusMessageId} />
       </RoomProvider>
     </main>
   );

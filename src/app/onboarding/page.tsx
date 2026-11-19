@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { redirect } from "next/navigation";
-import { getActor } from "@/lib/auth/actor";
+import { getPageActor } from "@/lib/auth/actor";
 import { catalogCourses, onboardingCatalog } from "@/lib/onboarding/catalog";
 import { OnboardingForm } from "./onboarding-form";
 
@@ -18,7 +18,7 @@ export default function OnboardingPage() {
 }
 
 async function AuthenticatedOnboarding() {
-  const actor = await getActor();
+  const actor = await getPageActor();
   if (actor?.kind !== "user") redirect("/login");
   if (actor.profile.onboarded_at) redirect("/app");
   const pending = actor.profile.pending_onboarding;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   PIN_WINDOW_MS, canAccessAdmin, canAnnounce, canChangeRole, canMute, canMuteTarget, canSeeReceipts,
-  csvField, isAdminEmail, isMuted, latestPinned, muteNotice, seenLabel, toCsv,
+  csvField, isAnnouncementSender, isAdminEmail, isMuted, latestPinned, muteNotice, seenLabel, toCsv,
 } from "../src/lib/moderation/rules";
 import { useReceipts } from "../src/lib/stores/receipts";
 
@@ -12,6 +12,14 @@ const admin = { role: "admin", is_try: false };
 const tryRep = { role: "rep", is_try: true };
 
 describe("who can announce", () => {
+  it("only promotes announcements from a room rep, admin or the seeded demo mentor", () => {
+    expect(isAnnouncementSender("subject", "r_cn", "u_1", "student")).toBe(false);
+    expect(isAnnouncementSender("subject", "r_cn", "u_1", "rep")).toBe(true);
+    expect(isAnnouncementSender("demo", "demo_cn", "try_1", "rep")).toBe(false);
+    expect(isAnnouncementSender("demo", "demo_cn", "demo_mentor", "bot")).toBe(true);
+    expect(isAnnouncementSender(undefined, "dm_1", "u_1", "admin")).toBe(false);
+  });
+
   it("allows reps and admins in section and subject rooms they belong to", () => {
     for (const viewer of [rep, admin]) {
       expect(canAnnounce(viewer, { kind: "section", isMember: true })).toBe(true);

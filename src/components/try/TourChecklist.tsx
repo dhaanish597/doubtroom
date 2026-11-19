@@ -84,7 +84,7 @@ export function TourChecklist() {
 
   return (
     <aside aria-labelledby={headingId}
-      className="z-20 shrink-0 border-t border-[#e9e7f4] bg-white shadow-[0_-6px_20px_rgb(59_47_201/0.08)] lg:fixed lg:right-5 lg:bottom-20 lg:w-88 lg:rounded-2xl lg:border lg:shadow-xl">
+      className="z-20 shrink-0 border-t border-border bg-card shadow-[0_-6px_20px_rgb(59_47_201/0.08)] lg:fixed lg:right-5 lg:bottom-20 lg:w-88 lg:rounded-2xl lg:border lg:shadow-xl">
       <button type="button" aria-expanded={!collapsed} aria-controls="demo-tour-steps" onClick={() => setCollapsed(!collapsed)}
         className="flex min-h-12 w-full items-center gap-2 px-4 text-left focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-primary">
         <Sparkles aria-hidden="true" className="size-4 shrink-0 text-accent" />
@@ -102,8 +102,8 @@ export function TourChecklist() {
               const current = step === next;
               return (
                 // Phones show only the step in progress so the chat keeps its room; wide screens list all five.
-                <li key={step} className={`gap-3 rounded-xl p-2 ${current ? "flex bg-[#f6f5fd]" : "hidden lg:flex"}`}>
-                  <span aria-hidden="true" className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${complete ? "bg-emerald-500 text-white" : current ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}>
+                <li key={step} className={`gap-3 rounded-xl p-2 ${current ? "flex bg-muted" : "hidden lg:flex"}`}>
+                  <span aria-hidden="true" className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${complete ? "bg-emerald-500 text-white" : current ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
                     {complete ? <Check className="size-3.5" /> : index + 1}
                   </span>
                   <div className="min-w-0 flex-1">

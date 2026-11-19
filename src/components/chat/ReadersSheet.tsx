@@ -103,10 +103,10 @@ export function ReadersSheet({ roomId, messageId, children }: { roomId: string; 
           <SheetDescription>Members tick off an announcement once it’s on their screen.</SheetDescription>
         </SheetHeader>
         <div className="min-h-0 overflow-y-auto px-4">
-          <div role="tablist" aria-label="Readers" className="mb-2 flex rounded-full bg-[#f2f0fb] p-0.5">
+          <div role="tablist" aria-label="Readers" className="mb-2 flex rounded-full bg-muted p-0.5">
             {([["seen", "Seen", CheckCheck], ["unseen", "Not yet", Clock3]] as const).map(([key, label, Icon]) => (
               <Button key={key} type="button" role="tab" variant="ghost" aria-selected={tab === key}
-                className={`h-11 flex-1 rounded-full ${tab === key ? "bg-white text-primary shadow-xs" : "text-muted-foreground"}`}
+                className={`h-11 flex-1 rounded-full ${tab === key ? "bg-card text-primary shadow-xs" : "text-muted-foreground"}`}
                 onClick={() => setTab(key)}>
                 <Icon aria-hidden="true" />{label}
                 {lists[key].status === "ready" && <span className="text-xs">({lists[key].users.filter(({ userId }) => userId !== BOT_IDS.TA).length}{lists[key].hasMore ? "+" : ""})</span>}

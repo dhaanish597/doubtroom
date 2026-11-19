@@ -21,7 +21,7 @@ const STEPS = [
 export default function TryPage() {
   const enabled = publicEnv.NEXT_PUBLIC_TRY_ENABLED;
   return (
-    <main className="min-h-dvh bg-[#f9f8fd]">
+    <main className="min-h-dvh bg-muted/45">
       <div className="mx-auto flex w-full max-w-xl flex-col px-4 pt-4 pb-10 sm:px-6">
         <Link href="/" className="inline-flex min-h-11 w-fit items-center gap-1.5 text-sm font-medium text-primary">
           <ArrowLeft aria-hidden="true" className="size-4" />DoubtRoom
@@ -32,12 +32,12 @@ export default function TryPage() {
           <p className="mt-3 text-lg text-muted-foreground">No sign-in. You get a private sandbox in a Computer Networks study room with an AI TA and a senior.</p>
           <div className="mt-7">
             {enabled ? <StartDemo /> : (
-              <p role="status" className="rounded-xl border bg-white p-4 text-sm">The demo is paused right now. Check back soon, or <Link href="/login" className="font-medium text-primary underline underline-offset-4">sign in</Link>.</p>
+              <p role="status" className="rounded-xl border bg-card p-4 text-sm">The demo is paused right now. Check back soon, or <Link href="/login" className="font-medium text-primary underline underline-offset-4">sign in</Link>.</p>
             )}
           </div>
         </section>
 
-        <section aria-labelledby="tour-heading" className="mt-10 rounded-2xl border border-[#e9e7f4] bg-white p-5">
+        <section aria-labelledby="tour-heading" className="mt-10 rounded-2xl border border-border bg-card p-5">
           <h2 id="tour-heading" className="font-semibold">What you’ll do</h2>
           <ol className="mt-3 space-y-2.5">
             {STEPS.map((step, index) => (
@@ -50,7 +50,7 @@ export default function TryPage() {
           <p className="mt-4 text-xs text-muted-foreground">Each step ticks itself off as you go.</p>
         </section>
 
-        <p className="mt-5 flex items-start gap-2.5 rounded-2xl bg-primary/8 p-4 text-sm text-[#241c83]">
+        <p className="mt-5 flex items-start gap-2.5 rounded-2xl bg-primary/8 p-4 text-sm text-primary">
           <MonitorSmartphone aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
           Open /try in a second browser to see real-time sync between two users.
         </p>

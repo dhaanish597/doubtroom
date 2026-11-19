@@ -1,3 +1,5 @@
+import { BOT_IDS, DEMO_ROOM_ID } from "../nexconn/identities";
+
 // Pure rules for announcements, mutes and the admin page. Shared by routes, pages and tests.
 
 export const MUTE_MINUTES = 60;
@@ -17,6 +19,12 @@ const ANNOUNCE_ROOM_KINDS = new Set(["section", "subject"]);
 export function canAnnounce(viewer: Viewer, room: RoomAccess) {
   if (viewer.is_try || !room.isMember || !ANNOUNCE_ROOM_KINDS.has(room.kind)) return false;
   return viewer.role === "rep" || viewer.role === "admin";
+}
+
+/** Decide whether a live SDK message can be displayed as an official announcement. */
+export function isAnnouncementSender(roomKind: string | undefined, roomId: string, senderId: string, role?: string) {
+  if (roomKind === "demo") return roomId === DEMO_ROOM_ID && senderId === BOT_IDS.DEMO_MENTOR;
+  return Boolean(roomKind && ANNOUNCE_ROOM_KINDS.has(roomKind) && (role === "rep" || role === "admin"));
 }
 
 /** Reps mute in their own section room. Admins mute in any section or subject room they belong to. */

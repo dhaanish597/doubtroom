@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { memo, useState, type ReactNode } from "react";
 import { Check, Clock3, FileDown, GraduationCap, ImageOff, RotateCcw, X } from "lucide-react";
 
+import { useRoomContext } from "@/components/rooms/RoomContext";
+import { isAnnouncementSender } from "@/lib/moderation/rules";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -100,19 +102,20 @@ function fileSize(bytes: number) {
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
-export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarget, reply, receipt }: {
+export const MessageBubble = memo(function MessageBubble({ message, roomId, own, grouped, retry, quoteTarget, reply, receipt }: {
   message: ChatMessage; roomId: string; own: boolean; grouped: boolean; retry?: () => void;
   receipt?: TickState;
   reply?: DoubtReplies;
   quoteTarget?: (messageId: string) => (() => void) | undefined;
 }) {
+  const room = useRoomContext();
   const profile = useProfiles((state) => state.profiles[message.senderUserId]);
   const profiles = useProfiles((state) => state.profiles);
   const content = renderableMessage(message.messageType, message.content);
   const doubt = message.messageType === MSG.DOUBT ? safeParseDoubt(message.content).data : undefined;
   const answer = message.messageType === MSG.ANSWER && message.senderUserId === BOT_IDS.TA ? safeParseAnswer(message.content).data : undefined;
   const recap = message.messageType === MSG.RECAP && message.senderUserId === BOT_IDS.TA ? safeParseRecap(message.content).data : undefined;
-  const announcement = message.messageType === MSG.ANNOUNCE ? safeParseAnnounce(message.content).data : undefined;
+  const announcement = message.messageType === MSG.ANNOUNCE && isAnnouncementSender(room?.kind, roomId, message.senderUserId, profile?.role) ? safeParseAnnounce(message.content).data : undefined;
   const boundDoubtId = message.metadata.get("did");
   const status = boundDoubtId && boundDoubtId !== doubt?.doubtId ? undefined : message.metadata.get("st");
   // TA answers must name this doubt. Senior replies match by the quoted message ID alone.
@@ -139,7 +142,7 @@ export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarge
       )}
       <div className={`min-w-0 max-w-[85%] sm:max-w-[76%] ${own ? "text-right" : ""}`}>
         {!own && !grouped && !answer && <p className="mb-1 truncate px-1 text-xs font-semibold text-foreground/80">{displayName}</p>}
-        <div className={`inline-block max-w-full rounded-2xl px-3.5 py-2.5 text-left text-sm leading-relaxed ${own ? "bg-primary/10 text-[#241c83]" : "border border-[#e9e7f4] bg-card text-card-foreground"} ${failed ? "ring-1 ring-destructive/50" : ""}`}>
+        <div className={`inline-block max-w-full rounded-2xl px-3.5 py-2.5 text-left text-sm leading-relaxed ${own ? "bg-primary/10 text-primary" : "border border-border bg-card text-card-foreground"} ${failed ? "ring-1 ring-destructive/50" : ""}`}>
           {content.kind === "text" && <RichText text={content.text} mentions={mentionLabels} />}
           {content.kind === "reference" && (
             <ReferenceBody senior={senior} author={displayName} quoted={content.quoted} jumpTo={quoteTarget?.(content.referMsgId)}>
@@ -160,8 +163,8 @@ export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarge
             metadata={message.metadata} jumpTo={quoteTarget?.(answer.doubtMessageId)} />}
           {recap && <RecapCard recap={recap} roomId={roomId} jumpTo={quoteTarget} />}
           {announcement && <AnnounceCard announcement={announcement} messageId={message.messageId} author={own ? "You" : displayName} own={own} sentTime={message.sentTime} />}
-          {content.kind === "card" && message.messageType !== MSG.DOUBT && message.messageType !== MSG.ANSWER && !recap && !announcement && <div className="border-s-2 border-accent ps-3"><p className="font-semibold">{content.label}</p><p className="line-clamp-4 whitespace-pre-wrap wrap-anywhere">{content.text}</p></div>}
-          {(content.kind === "unsupported" || (message.messageType === MSG.ANSWER && !answer)) && <p className="text-muted-foreground">Unsupported message</p>}
+          {content.kind === "card" && message.messageType !== MSG.DOUBT && message.messageType !== MSG.ANSWER && message.messageType !== MSG.RECAP && message.messageType !== MSG.ANNOUNCE && <div className="border-s-2 border-accent ps-3"><p className="font-semibold">{content.label}</p><p className="line-clamp-4 whitespace-pre-wrap wrap-anywhere">{content.text}</p></div>}
+          {(content.kind === "unsupported" || (message.messageType === MSG.ANSWER && !answer) || (message.messageType === MSG.ANNOUNCE && !announcement) || (message.messageType === MSG.RECAP && !recap)) && <p className="text-muted-foreground">Unsupported message</p>}
         </div>
         <div className={`flex min-h-5 flex-wrap items-center gap-1.5 px-1 text-[0.6875rem] text-muted-foreground ${own ? "justify-end" : ""}`}>
           <span>{time}</span>
@@ -174,4 +177,4 @@ export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarge
       </div>
     </article>
   );
-}
+});

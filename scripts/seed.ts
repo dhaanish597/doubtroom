@@ -6,6 +6,9 @@ import { issueToken, joinGroup, NexconnError } from "@/lib/nexconn/server";
 import { sectionRoom, subjectRoom, type RoomDefinition } from "@/lib/rooms/definitions";
 import { provisionRooms } from "@/lib/rooms/provision";
 import { adminSupabase } from "@/lib/supabase/admin";
+import { readFile } from "node:fs/promises";
+import { DEMO_NOTE_TITLE } from "@/lib/ai/demo-note";
+import { ingestPdf } from "@/lib/ai/ingest";
 import { loadDemoScript, seedDemoConversation } from "./demo-seed";
 
 async function seed() {
@@ -67,6 +70,11 @@ async function seed() {
   const { error: memberError } = await db.from("room_members").upsert(membership, { ignoreDuplicates: true });
   if (memberError) throw memberError;
 
+  if (demoCourse && process.env.GEMINI_API_KEY && process.env.GEMINI_EMBED_MODEL) {
+    const sample = await db.from("notes_chunks").select("id").eq("course_code", demoCourse).eq("source_title", DEMO_NOTE_TITLE).limit(1);
+    if (sample.error) throw sample.error;
+    if (!sample.data.length) await ingestPdf(demoCourse, DEMO_NOTE_TITLE, new Uint8Array(await readFile("public/notes/tcp-revision.pdf")));
+  }
   const conversation = await seedDemoConversation(profileIds, demoScript);
   console.info(`Seeded ${profileIds.size} bot profiles, ${courses.length} courses, and ${rooms.length} rooms (${sections.length} sections, 1 demo).`);
   console.info(conversation.delivered

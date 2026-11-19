@@ -8,6 +8,7 @@ import { doubtImageExtensions, doubtImageLimit, isDoubtImageType } from "@/lib/r
 import { BOT_IDS } from "@/lib/nexconn/identities";
 import { mentionAt, mentionPattern } from "@/lib/rooms/timeline";
 import type { RoomMember } from "@/lib/rooms/types";
+import { languages, type AnswerLanguage } from "@/lib/ai/languages";
 import { AnnounceComposer } from "./AnnounceComposer";
 import { MentionPicker } from "./MentionPicker";
 import { MutedNotice, useMutedUntil } from "./MuteGate";
@@ -16,12 +17,13 @@ const TA = { userId: BOT_IDS.TA, name: "TA (DoubtRoom TA)" };
 export type SendDraft =
   | { kind: "chat"; text: string; mentions: string[] }
   | { kind: "photo"; file: File }
-  | { kind: "doubt"; doubtId: string; text: string; unit?: string; file?: File }
+  | { kind: "doubt"; lang: AnswerLanguage; doubtId: string; text: string; unit?: string; file?: File }
   /** A senior's reply to the doubt in `reply`. */
   | { kind: "answer"; text: string };
 
-export function Composer({ roomId, units, allowDoubts, connected, progress, onSend, allowMentions = true, allowPhotos = true, prefill = "", prefillMode, prefillUnit, onInput, reply }: {
+export function Composer({ roomId, defaultLanguage = "en", units, allowDoubts, connected, progress, onSend, allowMentions = true, allowPhotos = true, prefill = "", prefillMode, prefillUnit, onInput, reply }: {
   roomId: string;
+  defaultLanguage?: AnswerLanguage;
   units: string[];
   allowDoubts: boolean;
   connected: boolean;
@@ -42,6 +44,7 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   const [draft, setDraft] = useState(prefill);
   const [appliedPrefill, setAppliedPrefill] = useState(prefill);
   const [mode, setMode] = useState<"chat" | "doubt">(prefill && prefillMode === "doubt" && allowDoubts ? "doubt" : "chat");
+  const [language, setLanguage] = useState<AnswerLanguage | null>(null);
   const [unit, setUnit] = useState(prefill && prefillUnit && units.includes(prefillUnit) ? prefillUnit : "");
   if (prefill !== appliedPrefill) {
     setAppliedPrefill(prefill);
@@ -143,9 +146,10 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
         setError("Choose a JPEG, PNG, WebP or HEIC photo.");
         return;
       }
-      onSend({ kind: "doubt", doubtId: crypto.randomUUID(), text, unit: unit || undefined, file: file ?? undefined });
+      onSend({ kind: "doubt", lang: language ?? defaultLanguage, doubtId: crypto.randomUUID(), text, unit: unit || undefined, file: file ?? undefined });
       setDraft("");
       setFile(null);
+      setLanguage(null);
       setCursor(0);
       setError("");
       return;
@@ -172,7 +176,7 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   }
 
   return (
-    <div className="shrink-0 border-t border-[#e9e7f4] bg-background px-2.5 py-2 sm:px-5">
+    <div className="shrink-0 border-t border-border bg-background px-2.5 py-2 sm:px-5">
       <form aria-label="Send a message" onSubmit={submit} className="mx-auto max-w-3xl space-y-1">
         <div className="flex items-center justify-between gap-1">
           {reply && (
@@ -182,14 +186,18 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
               <Button type="button" variant="ghost" aria-label="Cancel senior answer" className="size-11 shrink-0" onClick={reply.onCancel}><X aria-hidden="true" /></Button>
             </div>
           )}
-          {allowDoubts && !answering && <div className="flex rounded-full bg-[#f2f0fb] p-0.5" role="group" aria-label="Compose mode">
+          {allowDoubts && !answering && <div className="flex rounded-full bg-muted p-0.5" role="group" aria-label="Compose mode">
             {(["chat", "doubt"] as const).map((option) => (
-              <Button key={option} type="button" variant="ghost" aria-pressed={mode === option} className={`h-11 rounded-full px-3 capitalize ${mode === option ? "bg-white text-primary shadow-xs" : "text-muted-foreground"}`} onClick={() => { setMode(option); setError(""); }}>{option}</Button>
+              <Button key={option} type="button" variant="ghost" aria-pressed={mode === option} className={`h-11 rounded-full px-3 capitalize ${mode === option ? "bg-card text-primary shadow-xs" : "text-muted-foreground"}`} onClick={() => { setMode(option); setError(""); }}>{option}</Button>
             ))}
             {canAnnounce && <Button type="button" variant="ghost" aria-pressed={false} className="h-11 rounded-full px-3 text-muted-foreground" onClick={() => setAnnouncing(true)}><Megaphone aria-hidden="true" /><span className="sr-only sm:not-sr-only">Announce</span></Button>}
           </div>}
           {progress !== null && <div className="flex min-w-0 items-center gap-2 text-xs text-muted-foreground"><label htmlFor="room-upload" className="sr-only">Image upload</label><progress id="room-upload" max={100} value={progress} className="h-2 w-14 accent-primary sm:w-24" /><span>{Math.round(progress)}%</span></div>}
         </div>
+        {mode === "doubt" && !answering && <div role="group" aria-label="Answer language" className="flex flex-wrap items-center gap-1">
+          {Object.entries(languages).map(([id, label]) => <Button key={id} type="button" size="sm" variant={(language ?? defaultLanguage) === id ? "secondary" : "ghost"}
+            aria-pressed={(language ?? defaultLanguage) === id} onClick={() => setLanguage(id as AnswerLanguage)}>{id === "en" ? "EN" : label}</Button>)}
+        </div>}
         {mode === "doubt" && !answering && units.length > 0 && (
           <label className="flex items-center gap-2 text-sm font-medium">
             Unit
@@ -200,7 +208,7 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
           </label>
         )}
         {file && <div className="flex items-center justify-between gap-2 rounded-xl bg-muted pl-3 text-sm"><span className="truncate">{file.name}</span><Button type="button" variant="ghost" aria-label="Remove attached image" className="size-11 shrink-0" onClick={() => setFile(null)}><X aria-hidden="true" /></Button></div>}
-        <div className="relative flex items-end gap-0.5 rounded-2xl border bg-white p-1 focus-within:border-primary/60">
+        <div className="relative flex items-end gap-0.5 rounded-2xl border bg-card p-1 focus-within:border-primary/60">
           {pickerOpen && <MentionPicker members={options} loading={memberStatus === "loading"} failed={memberStatus === "failed"} onPick={selectMember} onRetry={fetchMembers} />}
           <input type="file" hidden ref={attach} accept={mode === "doubt" ? Object.keys(doubtImageExtensions).join(",") : "image/*"} onChange={(event) => {
             const selected = event.currentTarget.files?.[0];

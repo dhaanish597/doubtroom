@@ -9,7 +9,7 @@ import type { ClassSelection, CourseLocation } from "@/lib/rooms/definitions";
 
 type Catalog = { dept: string; years: { year: number; sections: string[] }[] }[];
 const steps = ["Class", "Invite code", "Subjects"];
-const years = [1, 2, 3, 4];
+
 
 export function OnboardingForm({ catalog, courses, pending }: {
   catalog: Catalog;
@@ -28,6 +28,7 @@ export function OnboardingForm({ catalog, courses, pending }: {
   const [busy, setBusy] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const activeRequest = useRef(false);
+  const years = catalog.find((entry) => entry.dept === dept)?.years.map(entry => entry.year) ?? [];
   const sections = catalog.find((entry) => entry.dept === dept)?.years.find((entry) => entry.year === year)?.sections ?? [];
   const filtered = courses.filter(({ code, title, dept }) =>
     `${code} ${title} ${dept}`.toLowerCase().includes(search.trim().toLowerCase()),

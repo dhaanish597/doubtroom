@@ -16,10 +16,10 @@ import type { ChatMessage } from "@/lib/stores/messages";
 function EveAnswer({ answer, sentTime }: { answer: AnswerContent; sentTime: number }) {
   return (
     <article className="flex min-w-0 items-start gap-2">
-      <span aria-hidden="true" className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+      <span aria-hidden="true" className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
         <Sparkles className="size-4" />
       </span>
-      <div className="min-w-0 max-w-[85%] rounded-2xl border border-primary/20 bg-white px-3.5 py-2.5 text-sm leading-relaxed shadow-xs sm:max-w-[76%]">
+      <div className="min-w-0 max-w-[85%] rounded-2xl border border-primary/20 bg-card px-3.5 py-2.5 text-sm leading-relaxed shadow-xs sm:max-w-[76%]">
         <p className="mb-1 text-xs font-semibold text-primary">DoubtRoom TA</p>
         <p className="mb-2 line-clamp-2 rounded-md border-s-2 border-primary/40 bg-muted px-2 py-1 text-xs text-muted-foreground wrap-anywhere">{answer.quotedText}</p>
         <div className={`space-y-2 wrap-anywhere [&_a]:underline [&_ol]:list-decimal [&_ol]:ps-5 [&_ul]:list-disc [&_ul]:ps-5 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-2 ${answer.failed ? "text-muted-foreground" : ""}`}>
@@ -50,7 +50,7 @@ export function EveTimeline({ eveId, messages, userId, entering, onRetry }: {
   }, [newestId, newestOwn]);
 
   return (
-    <div className="relative min-h-0 flex-1 bg-[#f9f8fd]">
+    <div className="relative min-h-0 flex-1 bg-muted/45">
       <div ref={viewport} tabIndex={0} aria-label="Exam Eve messages" onScroll={(event) => {
         const panel = event.currentTarget;
         atBottom.current = panel.scrollHeight - panel.clientHeight - panel.scrollTop < 64;

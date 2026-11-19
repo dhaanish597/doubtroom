@@ -26,7 +26,10 @@
       "examTip": "Draw the slow start and congestion avoidance graph, with cwnd against RTT. It is worth easy marks.",
       "verifiedBy": "demo_mentor",
       "verName": "Arun (IV CSE)",
-      "upvotedBy": ["demo_priya", "demo_mentor"]
+      "upvotedBy": [
+        "demo_priya",
+        "demo_mentor"
+      ]
     },
     {
       "key": "arun_verify_note",
@@ -55,7 +58,31 @@
       "answerId": "721784b8-54a0-4e8c-85df-b05b36a017e8",
       "markdown": "A DNS lookup is one small question and one small answer, so speed matters more than a connection.\n\n1. **No handshake.** UDP skips TCP's 3-way handshake, so a lookup takes one round trip instead of two.\n2. **Less server load.** A DNS server answers millions of queries without keeping connection state.\n3. **The client retries.** If a reply is lost, the resolver simply asks again.\n\nDNS still uses **TCP on port 53** for zone transfers and for replies larger than 512 bytes.",
       "examTip": "Mention the TCP exception for zone transfers. Examiners look for it.",
-      "upvotedBy": ["demo_priya"]
+      "upvotedBy": [
+        "demo_priya"
+      ]
+    },
+    {
+      "key": "doubt_final_ack",
+      "kind": "doubt",
+      "from": "demo_priya",
+      "doubtId": "08264468-9a5c-4a94-b7c1-6594867356bb",
+      "unit": "Unit 2: TRANSPORT LAYER",
+      "text": "What does the final ACK in a TCP handshake confirm?"
+    },
+    {
+      "key": "answer_final_ack",
+      "kind": "answer",
+      "doubt": "doubt_final_ack",
+      "answerId": "ca974334-f065-4acf-9374-11e06bc44364",
+      "markdown": "The final ACK confirms that the client received the server’s initial sequence number. If the server sent SYN + ACK with sequence number y, the client acknowledges y + 1 because SYN consumes one sequence number. [S1]",
+      "examTip": "Draw the three arrows between client and server. Label the last arrow ACK, acknowledgement y + 1.",
+      "sources": [
+        {
+          "title": "DoubtRoom TCP revision sheet",
+          "page": 1
+        }
+      ]
     }
   ]
 }

@@ -115,7 +115,7 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
   }
 
   return (
-    <div className="relative min-h-0 flex-1 bg-[#f9f8fd]">
+    <div className="relative min-h-0 flex-1 bg-muted/45">
       <div tabIndex={0} aria-label={label} ref={viewportRef} onScroll={scroll} className="h-full overflow-y-auto overscroll-contain [overflow-anchor:none] focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-primary/70">
         <div className="mx-auto flex min-h-full max-w-3xl flex-col px-3 py-3 sm:px-5 sm:py-4">
           {connected && (loading || error || (hasOlder && ready)) && (
@@ -155,7 +155,7 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
                 <Fragment key={message.messageId}>
                   {nextDay && messageDate(message.sentTime) && <li className="my-5 flex items-center gap-3 text-xs font-medium text-muted-foreground before:h-px before:flex-1 before:bg-[#e9e7f4] after:h-px after:flex-1 after:bg-[#e9e7f4]">{messageDate(message.sentTime)}</li>}
                   <li data-message-id={message.messageId} tabIndex={-1} className={`rounded-2xl transition-colors duration-700 data-highlighted:bg-amber-100/80 data-highlighted:ring-2 data-highlighted:ring-amber-400 ${grouped ? "mt-0.5" : "mt-3 first:mt-0"}`}>
-                    <MessageBubble message={message} roomId={roomId} quoteTarget={quoteTarget} reply={replies.get(message.messageId)} own={message.senderUserId === userId} grouped={grouped}
+                    <MessageBubble message={message} roomId={roomId} quoteTarget={message.messageType === STANDARD_MSG.REFERENCE || message.messageType === MSG.ANSWER || message.messageType === MSG.RECAP ? quoteTarget : undefined} reply={replies.get(message.messageId)} own={message.senderUserId === userId} grouped={grouped}
                       receipt={message.senderUserId === userId ? receiptFor?.(message) : undefined}
                       retry={connected && message.messageId.startsWith("local:") ? () => onRetry(message.messageId) : undefined} />
                   </li>

@@ -171,3 +171,9 @@ Reports now come from a menu on other people's messages. TA answers keep their P
 Migration `0006_phase11a.sql` adds `announcements.urgent`, `reports.excerpt` (500-character check), `reports.reported_user_id` and indexes on announcements, reports and muted members. It also adds four functions: `record_announcement`, `set_member_mute`, `admin_set_role` and `admin_daily_metrics`. Execute is granted to `service_role` only. A local PostgreSQL 16 run applied migrations 0001 to 0004, then 0006, without pgvector. The functions behaved as expected, and execution was denied to `anon` and `authenticated`.
 
 The /admin page renders the Phase 11B `EvePanel` next to the Phase 11A panels. The page gate uses the stricter `isAdminActor` from `src/lib/moderation/server.ts`: role admin plus an email in `ADMIN_EMAILS`. The 11B Eve routes keep their own role-only check from `src/lib/eves/server.ts`. Phase 11A was rebased onto `main` after Phase 9 and 11B. The room page shows the Eve banner, then the pinned announcement, and bubbles render both RecapCard and AnnounceCard.
+
+## D-014 Phase 8 PDF ingestion and answer sources
+
+Course notes use unpdf's bundled PDF.js text extractor on the project's Node 24 runtime. It retains physical PDF page numbers. Scanned documents need a selectable text layer. The CLI and admin endpoint share the same ingestion code. The admin form uploads to a private Supabase bucket using a scoped signed URL, then indexes and removes the staged file. This accommodates a 20 MB PDF despite Vercel's smaller function request-body limit. Direct multipart requests are also supported.
+
+Imports replace a course/title atomically after all embeddings succeed. Cached answers carry the sources that were cited when written. The demo room uses the original DoubtRoom TCP revision sheet, available at /notes/tcp-revision.pdf. Production campus-room notes stay out of demo prompts.

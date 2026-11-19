@@ -74,7 +74,7 @@ export function RoleForm({ courses }: { courses: CourseOption[] }) {
         <label className="min-w-0 flex-1">
           <span className="sr-only">Email</span>
           <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@college.edu"
-            autoComplete="off" className="block min-h-11 w-full rounded-lg border bg-white px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-primary/45" />
+            autoComplete="off" className="block min-h-11 w-full rounded-lg border bg-card px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-primary/45" />
         </label>
         <Button type="submit" className="h-11 shrink-0 rounded-xl" disabled={busy}>
           <Search aria-hidden="true" />{status.kind === "loading" ? "Finding…" : "Find"}
@@ -95,7 +95,7 @@ export function RoleForm({ courses }: { courses: CourseOption[] }) {
                 <legend className="text-sm font-medium">Role</legend>
                 <div className="flex flex-wrap gap-2">
                   {ASSIGNABLE_ROLES.map((option) => (
-                    <label key={option} className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-sm ${role === option ? "border-primary bg-white text-primary" : "bg-white"}`}>
+                    <label key={option} className={`inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border px-3 text-sm ${role === option ? "border-primary bg-card text-primary" : "bg-card"}`}>
                       <input type="radio" name="role" value={option} checked={role === option} onChange={() => setRole(option)} className="accent-primary" />
                       {ROLE_LABELS[option]}
                     </label>
@@ -106,7 +106,7 @@ export function RoleForm({ courses }: { courses: CourseOption[] }) {
                 <fieldset className="space-y-1">
                   <legend className="text-sm font-medium">Courses they can verify</legend>
                   {courses.length === 0 ? <p className="text-sm text-muted-foreground">No courses in the catalog yet. Run the seed first.</p> : (
-                    <div className="max-h-56 space-y-0.5 overflow-y-auto rounded-lg border bg-white p-1">
+                    <div className="max-h-56 space-y-0.5 overflow-y-auto rounded-lg border bg-card p-1">
                       {courses.map((course) => (
                         <label key={course.code} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md px-2 text-sm hover:bg-muted">
                           <input type="checkbox" className="size-4 accent-primary" checked={selected.has(course.code)} onChange={(event) => {

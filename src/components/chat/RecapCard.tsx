@@ -31,14 +31,14 @@ export function RecapCard({ recap, roomId, jumpTo }: {
         </div>
       </header>
       {recap.items.length === 0 ? <p className="text-muted-foreground">No top answers from yesterday.</p> : (
-        <ol className="divide-y divide-[#e9e7f4] overflow-hidden rounded-xl border border-[#e9e7f4]">
+        <ol className="divide-y divide-[#e9e7f4] overflow-hidden rounded-xl border border-border">
           {recap.items.map((item, index) => {
             const scroll = jumpTo?.(item.doubtMessageId);
             return (
               <li key={`${item.doubtMessageId}:${index}`}>
                 <Link href={`/app/room/${roomId}?m=${encodeURIComponent(item.doubtMessageId)}`}
                   onClick={(event) => { if (scroll) { event.preventDefault(); scroll(); } }}
-                  className="flex min-h-11 items-start gap-2 bg-white px-3 py-2.5 hover:bg-primary/5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary">
+                  className="flex min-h-11 items-start gap-2 bg-card px-3 py-2.5 hover:bg-primary/5 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary">
                   <span className="mt-0.5 w-4 shrink-0 text-xs font-semibold text-primary">{index + 1}</span>
                   <span className="min-w-0 flex-1">
                     <span className="line-clamp-2 font-medium wrap-anywhere">{item.question}</span>

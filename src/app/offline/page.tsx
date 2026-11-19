@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Offline · DoubtRoom" };
 
 export default function OfflinePage() {
   return (
-    <main className="grid min-h-dvh place-items-center bg-[#f9f8fd] px-6">
+    <main className="grid min-h-dvh place-items-center bg-muted/45 px-6">
       <div className="max-w-sm text-center">
         <WifiOff aria-hidden="true" className="mx-auto size-10 text-primary" />
         <h1 className="mt-4 text-2xl font-semibold tracking-tight">You’re offline</h1>

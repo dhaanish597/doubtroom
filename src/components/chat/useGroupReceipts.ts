@@ -3,6 +3,9 @@
 import { useEffect, useRef, type RefObject } from "react";
 import type { GroupChannel } from "@nexconn/chat";
 
+import { useRoomContext } from "@/components/rooms/RoomContext";
+import { isAnnouncementSender } from "@/lib/moderation/rules";
+import { useProfiles } from "@/lib/stores/profiles";
 import { initNexconn } from "@/lib/nexconn/client";
 import { MSG } from "@/lib/nexconn/messages";
 import type { ChatMessage } from "@/lib/stores/messages";
@@ -28,6 +31,8 @@ export function useGroupReceipts({ roomId, userId, connected, messages, channel,
   /** Admins look up counts for every announcement, not only their own. */
   trackAll: boolean;
 }) {
+  const kind = useRoomContext()?.kind;
+  const profiles = useProfiles((state) => state.profiles);
   const acked = useRef(new Set<string>());
   const ready = useRef(new Set<string>());
   const dwell = useRef(new Map<string, ReturnType<typeof setTimeout>>());
@@ -59,7 +64,7 @@ export function useGroupReceipts({ roomId, userId, connected, messages, channel,
   useEffect(() => {
     const room = channel.current;
     if (!connected || !room || !userId) return;
-    const ids = messages.filter((message) => message.messageType === MSG.ANNOUNCE && !message.messageId.startsWith("local:")
+    const ids = messages.filter((message) => message.messageType === MSG.ANNOUNCE && isAnnouncementSender(kind, roomId, message.senderUserId, profiles[message.senderUserId]?.role) && !message.messageId.startsWith("local:")
       && (trackAll || message.senderUserId === userId) && !queried.current.has(message.messageId))
       .map(({ messageId }) => messageId);
     for (let start = 0; start < ids.length; start += INFO_BATCH) {
@@ -74,7 +79,7 @@ export function useGroupReceipts({ roomId, userId, connected, messages, channel,
           ({ messageId, read: readCount, total: totalCount })));
       }).catch(() => useReceipts.getState().setError(batch, -1));
     }
-  }, [connected, messages, userId, channel, trackAll]);
+  }, [connected, messages, userId, channel, trackAll, kind, roomId, profiles]);
 
   // Acknowledge announcements from others after they have been on screen for a second.
   useEffect(() => {
@@ -104,7 +109,7 @@ export function useGroupReceipts({ roomId, userId, connected, messages, channel,
         if (!id) continue;
         clearTimeout(timers.get(id));
         timers.delete(id);
-        if (!entry.isIntersecting) continue;
+        if (!entry.isIntersecting || entry.intersectionRatio < VISIBLE_RATIO) continue;
         timers.set(id, setTimeout(() => {
           timers.delete(id);
           if (document.visibilityState !== "visible") return;
@@ -114,7 +119,7 @@ export function useGroupReceipts({ roomId, userId, connected, messages, channel,
       }
     }, { root: panel, threshold: VISIBLE_RATIO });
 
-    const pending = new Set(messages.filter((message) => message.messageType === MSG.ANNOUNCE
+    const pending = new Set(messages.filter((message) => message.messageType === MSG.ANNOUNCE && isAnnouncementSender(kind, roomId, message.senderUserId, profiles[message.senderUserId]?.role)
       && message.senderUserId !== userId && !message.sentReceipt && !acked.current.has(message.messageId))
       .map(({ messageId }) => messageId));
     for (const row of panel.querySelectorAll<HTMLElement>("[data-message-id]")) {
@@ -127,5 +132,5 @@ export function useGroupReceipts({ roomId, userId, connected, messages, channel,
       clearTimeout(flushTimer.current);
       queue.clear();
     };
-  }, [connected, messages, userId, channel, viewport]);
+  }, [connected, messages, userId, channel, viewport, kind, roomId, profiles]);
 }

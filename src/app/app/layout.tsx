@@ -8,6 +8,7 @@ import { getPageActor } from "@/lib/auth/actor";
 import { NexconnProvider } from "@/lib/nexconn/provider";
 import { AppNav } from "./nav";
 import Loading from "./loading";
+import { Welcome } from "./Welcome";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return <Suspense fallback={<Loading />}><AuthenticatedApp>{children}</AuthenticatedApp></Suspense>;
@@ -23,7 +24,7 @@ async function AuthenticatedApp({ children }: { children: ReactNode }) {
     <div data-app-shell className="flex min-h-dvh flex-col">
       <NexconnProvider>
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-        {actor.kind === "try" && <TourChecklist />}
+        {actor.kind === "try" ? <TourChecklist /> : <Welcome profileId={actor.profile.id} />}
         <AppNav mentor={actor.profile.role === "mentor"} />
       </NexconnProvider>
       <ServiceWorkerRegistration />

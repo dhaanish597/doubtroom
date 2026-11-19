@@ -43,7 +43,7 @@ export function useMutedUntil(roomId: string) {
 
 export function MutedNotice({ until }: { until: number }) {
   return (
-    <div className="shrink-0 border-t border-[#e9e7f4] bg-background px-2.5 py-3 sm:px-5">
+    <div className="shrink-0 border-t border-border bg-background px-2.5 py-3 sm:px-5">
       <p role="status" className="mx-auto flex max-w-3xl items-center gap-2 rounded-2xl bg-muted px-3 py-3 text-sm text-muted-foreground">
         <BellOff aria-hidden="true" className="size-4 shrink-0" />
         <span><span className="font-semibold text-foreground">{muteNotice(until)}.</span> You can still read the room.</span>

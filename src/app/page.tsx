@@ -18,13 +18,13 @@ const STEPS = [
 
 function ChatPreview() {
   return (
-    <div aria-hidden="true" className="relative mx-auto w-full max-w-sm rotate-1 rounded-3xl bg-white p-4 text-left text-sm text-foreground shadow-2xl shadow-black/25">
+    <div aria-hidden="true" className="relative mx-auto w-full max-w-sm rotate-1 rounded-3xl bg-card p-4 text-left text-sm text-foreground shadow-2xl shadow-black/25">
       <p className="mb-3 text-xs font-semibold text-muted-foreground">CS3591 · Computer Networks</p>
-      <div className="rounded-2xl border border-[#e9e7f4] p-3">
+      <div className="rounded-2xl border border-border p-3">
         <p className="text-xs font-semibold text-primary">Doubt · Unit 2</p>
         <p className="mt-1 font-medium">Why does TCP need a 3-way handshake?</p>
       </div>
-      <div className="mt-3 rounded-2xl border border-[#e9e7f4] border-s-4 border-s-indigo-500 p-3">
+      <div className="mt-3 rounded-2xl border border-border border-s-4 border-s-indigo-500 p-3">
         <p className="font-semibold">DoubtRoom TA</p>
         <p className="mt-1 text-muted-foreground">Both sides must agree on starting sequence numbers. SYN, SYN-ACK, ACK does that in three steps…</p>
         <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">
@@ -67,7 +67,7 @@ function StatsSkeleton() {
 
 export default function Home() {
   return (
-    <main className="min-h-dvh bg-[#f9f8fd]">
+    <main className="min-h-dvh bg-muted/45">
       <section aria-labelledby="hero-heading" className="overflow-hidden bg-primary px-4 pt-14 pb-16 text-primary-foreground sm:px-8 sm:pt-20">
         <div className="mx-auto grid max-w-5xl items-center gap-12 lg:grid-cols-[1.2fr_1fr]">
           <div>
@@ -95,7 +95,7 @@ export default function Home() {
       </section>
 
       <section aria-labelledby="stats-heading" className="mx-auto -mt-8 max-w-5xl px-4 sm:px-8">
-        <div className="rounded-3xl border border-[#e9e7f4] bg-white p-5 shadow-lg shadow-primary/5 sm:p-6">
+        <div className="rounded-3xl border border-border bg-card p-5 shadow-lg shadow-primary/5 sm:p-6">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
             <h2 id="stats-heading" className="font-semibold">Live right now</h2>
             <Link href="/impact" className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary">
@@ -124,7 +124,7 @@ export default function Home() {
         </p>
       </section>
 
-      <footer className="border-t border-[#e9e7f4] bg-white px-4 py-8 sm:px-8">
+      <footer className="border-t border-border bg-card px-4 py-8 sm:px-8">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 text-sm sm:flex-row sm:items-center sm:justify-between">
           <p className="text-muted-foreground">Built on Nexconn Chat</p>
           <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2">

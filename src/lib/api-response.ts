@@ -5,5 +5,10 @@ export function apiJson<T>(body: T, status = 200) {
 }
 
 export function apiError(status: number, code: string, message: string) {
-  return apiJson({ error: { code, message } }, status);
+  if (status < 500) return apiJson({ error: { code, message } }, status);
+  const requestId = crypto.randomUUID();
+  console.error("API request failed", { requestId, code, status });
+  const response = apiJson({ error: { code, message, requestId } }, status);
+  response.headers.set("X-Request-ID", requestId);
+  return response;
 }

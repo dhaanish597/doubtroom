@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, Megaphone } from "lucide-react";
 
-import { latestPinned, PIN_WINDOW_MS } from "@/lib/moderation/rules";
+import { isAnnouncementSender, latestPinned, PIN_WINDOW_MS } from "@/lib/moderation/rules";
 import type { PinnedAnnouncement as Pinned } from "@/lib/moderation/types";
 import { MSG, safeParseAnnounce } from "@/lib/nexconn/messages";
 import { messageTime } from "@/lib/rooms/timeline";
@@ -41,11 +41,12 @@ export function PinnedAnnouncement() {
 
   const pinned = useMemo(() => {
     const live = messages.flatMap((message) => {
+      if (!isAnnouncementSender(room?.kind, roomId, message.senderUserId, profiles[message.senderUserId]?.role)) return [];
       const entry = fromMessage(message);
       return entry ? [{ ...entry, authorName: "" }] : [];
     });
     return latestPinned(stored ? [stored, ...live] : live, now);
-  }, [messages, stored, now]);
+  }, [messages, stored, now, room?.kind, roomId, profiles]);
 
   if (!room || !pinned || now - pinned.sentTime > PIN_WINDOW_MS) return null;
   const author = pinned.authorName || profiles[pinned.authorId]?.name || "Class rep";

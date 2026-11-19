@@ -41,10 +41,10 @@ export function AnnounceCard({ announcement, messageId, author, own, sentTime }:
         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold text-white ${announcement.urgent ? "bg-red-600" : "bg-amber-600"}`}>
           <Megaphone aria-hidden="true" className="size-3.5" />{announcement.urgent ? "Urgent" : "Announcement"}
         </span>
-        <span className="text-xs text-muted-foreground">{author} · {messageTime(sentTime)}</span>
+        <span className="text-xs text-stone-700">{author} · {messageTime(sentTime)}</span>
       </header>
-      <h3 className="font-semibold leading-snug wrap-anywhere text-foreground">{announcement.title}</h3>
-      <p className="whitespace-pre-wrap wrap-anywhere text-foreground/90">{announcement.body}</p>
+      <h3 className="font-semibold leading-snug wrap-anywhere text-stone-950">{announcement.title}</h3>
+      <p className="whitespace-pre-wrap wrap-anywhere text-stone-900">{announcement.body}</p>
       {showReceipts && room && <SeenBy roomId={room.roomId} messageId={messageId} memberCount={room.memberCount} />}
     </section>
   );

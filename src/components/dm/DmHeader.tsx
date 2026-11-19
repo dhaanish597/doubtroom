@@ -20,7 +20,7 @@ export function DmHeader({ peer }: { peer: DmPeer }) {
   const status = online === null ? "Checking status…" : online ? "Online" : "Offline";
 
   return (
-    <header className="shrink-0 border-b border-[#e9e7f4] bg-white">
+    <header className="shrink-0 border-b border-border bg-card">
       <div className="mx-auto flex max-w-3xl items-center gap-2 px-2.5 py-2.5 sm:px-5">
         <Button asChild variant="ghost" className="size-11 shrink-0 rounded-full text-primary">
           <Link href="/app" aria-label="Back to rooms"><ArrowLeft className="size-5" aria-hidden="true" /></Link>

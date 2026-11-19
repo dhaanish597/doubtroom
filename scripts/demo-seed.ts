@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import script from "../data/demo-seed.json";
 import { BOT_IDS } from "@/lib/nexconn/identities";
-import { MSG, type AnswerContent } from "@/lib/nexconn/messages";
+import { MSG, answerSchema, type AnswerContent } from "@/lib/nexconn/messages";
 import { NexconnError, sendGroupCustom, sendGroupText, setMessageMetadata } from "@/lib/nexconn/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 
@@ -17,6 +17,7 @@ const messageSchema = z.discriminatedUnion("kind", [
   z.strictObject({ key, kind: z.literal("doubt"), from: demoUser, doubtId: z.uuid(), unit: z.string(), text: z.string().min(1) }),
   z.strictObject({
     key, kind: z.literal("answer"), doubt: key, answerId: z.uuid(), markdown: z.string().min(1), examTip: z.string().optional(),
+    sources: answerSchema.shape.sources,
     verifiedBy: demoUser.optional(), verName: z.string().optional(), upvotedBy: z.array(demoUser).default([]),
   }),
 ]);
@@ -55,7 +56,7 @@ async function sentMarkers(db: Db, roomId: string) {
 function answerPayload(message: AnswerMessage, doubt: DoubtMessage, doubtMessageId: string): AnswerContent {
   return {
     v: 1, answerId: message.answerId, doubtId: doubt.doubtId, doubtMessageId, markdown: message.markdown,
-    examTip: message.examTip, lang: "en", model: SEED_MODEL, quotedText: doubt.text,
+    examTip: message.examTip, sources: message.sources, lang: "en", model: SEED_MODEL, quotedText: doubt.text,
   };
 }
 
@@ -139,7 +140,7 @@ async function upsertRows(db: Db, demo: DemoScript, sent: Map<string, string>, p
     const voters = [...new Set(message.upvotedBy)];
     const answerRow = await db.from("answers").upsert({
       id: message.answerId, doubt_id: doubt.doubtId, room_id: demo.roomId, message_id: messageId, author_kind: "ai",
-      body_md: message.markdown, model: SEED_MODEL, exam_tip: message.examTip ?? null, confidence: "high", upvotes: voters.length,
+      body_md: message.markdown, sources: message.sources ?? null, model: SEED_MODEL, exam_tip: message.examTip ?? null, confidence: "high", upvotes: voters.length,
       verified_by: message.verifiedBy ? profile(message.verifiedBy) : null, verified_at: verified ? now : null,
     });
     if (answerRow.error) throw answerRow.error;

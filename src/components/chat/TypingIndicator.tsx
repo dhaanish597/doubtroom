@@ -1,6 +1,6 @@
 export function TypingIndicator({ name }: { name: string | null }) {
   return (
-    <p role="status" aria-live="polite" className="min-h-6 shrink-0 bg-[#f9f8fd] px-4 text-xs italic text-muted-foreground">
+    <p role="status" aria-live="polite" className="min-h-6 shrink-0 bg-muted/45 px-4 text-xs italic text-muted-foreground">
       {name && (
         <span className="mx-auto flex max-w-3xl items-center gap-1.5">
           <span aria-hidden="true" className="flex gap-0.5">

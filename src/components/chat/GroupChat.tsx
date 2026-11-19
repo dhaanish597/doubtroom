@@ -15,6 +15,7 @@ import { loadProfiles } from "@/lib/stores/profiles";
 import { markRoomPreviewRead, recordRoomMessage, useRooms } from "@/lib/stores/rooms";
 import { useTourPrefill } from "@/lib/stores/tour";
 import { useRoomContext } from "@/components/rooms/RoomContext";
+import type { AnswerLanguage } from "@/lib/ai/languages";
 import { Composer, type SendDraft } from "./Composer";
 import { FocusedMessage } from "./FocusedMessage";
 import { MessageList } from "./MessageList";
@@ -64,8 +65,8 @@ async function requestTa(body: object) {
   if (!response.ok) throw new Error("TA request failed");
 }
 
-export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false, focusMessageId }: {
-  roomId: string; title: string; initialUnits?: string[]; dev?: boolean;
+export function GroupChat({ roomId, title, initialUnits = NO_UNITS, language = "en", dev = false, focusMessageId }: {
+  roomId: string; title: string; language?: AnswerLanguage; initialUnits?: string[]; dev?: boolean;
   /** Message to scroll to and highlight, for example from the doubt board. */
   focusMessageId?: string;
 }) {
@@ -202,7 +203,7 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false,
         if (draft.file && !imageUrl) imageUrl = await uploadDoubtImage(roomId, draft.doubtId, draft.file);
         if (useConnection.getState().userId !== item.owner) throw new Error("Chat identity changed");
         const params = new SendMessageParams({
-          v: 1, doubtId: draft.doubtId, text: draft.text, unit: draft.unit, imageUrl, lang: "en",
+          v: 1, doubtId: draft.doubtId, text: draft.text, unit: draft.unit, imageUrl, lang: draft.lang,
         }, MSG.DOUBT);
         params.metadata = { st: "open" };
         result = await room.sendMessage(params);
@@ -234,7 +235,7 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false,
         trackRoomEvent("message_sent", roomId);
         const { messageId } = result.data;
         const ask = draft.kind === "doubt"
-          ? { roomId, messageId, mode: "doubt", doubtId: draft.doubtId, text: draft.text, unit: draft.unit, imageUrl }
+          ? { roomId, messageId, mode: "doubt", doubtId: draft.doubtId, text: draft.text, unit: draft.unit, imageUrl, lang: draft.lang }
           : draft.kind === "chat" && draft.mentions.includes(BOT_IDS.TA)
             ? { roomId, messageId, mode: "mention", text: draft.text } : null;
         if (draft.kind === "doubt") trackRoomEvent("doubt_posted", roomId);
@@ -272,7 +273,7 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false,
           if (item) void send(item);
         }} />
       {taError && <p role="alert" className="border-t px-4 py-2 text-sm text-destructive">{taError}</p>}
-      <Composer roomId={roomId} units={units} allowDoubts={!dev} connected={connected} progress={progress}
+      <Composer defaultLanguage={language} roomId={roomId} units={units} allowDoubts={!dev} connected={connected} progress={progress}
         prefill={tourPrefill?.text} prefillMode={tourPrefill ? "doubt" : undefined} prefillUnit={tourPrefill?.unit}
         reply={replyTo && { quotedText: replyTo.quotedText, onCancel: () => startSeniorReply(null) }} onSend={(draft) => {
         if (!userId) return;

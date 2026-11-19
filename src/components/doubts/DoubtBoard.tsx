@@ -65,11 +65,11 @@ export function DoubtBoard({ roomId }: { roomId: string }) {
   const visible = doubts.filter((doubt) => doubt.tab === tab);
   return (
     <div>
-      <div role="tablist" aria-label="Doubt status" className="flex gap-1 rounded-full bg-[#f2f0fb] p-1">
+      <div role="tablist" aria-label="Doubt status" className="flex gap-1 rounded-full bg-muted p-1">
         {BOARD_TABS.map((name) => (
           <button key={name} type="button" role="tab" id={`doubts-tab-${name}`} aria-selected={tab === name} aria-controls="doubts-panel"
             onClick={() => setTab(name)}
-            className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-primary ${tab === name ? "bg-white text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"}`}>
+            className={`flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full px-2 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-primary ${tab === name ? "bg-card text-primary shadow-xs" : "text-muted-foreground hover:text-foreground"}`}>
             <span className="truncate">{tabLabels[name]}</span>
             <span className={`rounded-full px-1.5 text-xs tabular-nums ${tab === name ? "bg-primary/10" : "bg-white/70"}`}>{counts[name]}</span>
           </button>

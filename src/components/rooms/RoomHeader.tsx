@@ -11,7 +11,7 @@ import type { Room } from "@/lib/rooms/types";
 export function RoomHeader({ room, tab }: { room: Pick<Room, "id" | "title" | "courseCode" | "memberCount">; tab: "chat" | "doubts" }) {
   const roomPath = `/app/room/${room.id}`;
   return (
-    <header className="shrink-0 border-b border-[#e9e7f4] bg-white">
+    <header className="shrink-0 border-b border-border bg-card">
       <div className="mx-auto max-w-3xl px-2.5 sm:px-5">
         <div className="flex items-start gap-2 py-2.5">
           <Button asChild variant="ghost" className="size-11 shrink-0 rounded-full text-primary">

@@ -15,13 +15,6 @@ const sessionSchema = z.object({
   nexconnUserId: z.string().min(1),
 });
 
-const noRefresh = new Set<number>([
-  CONNECTION_CODE.ACK_TIMEOUT,
-  CONNECTION_CODE.SERVER_UNAVAILABLE,
-  CONNECTION_CODE.HOSTNAME_ERROR,
-  CONNECTION_CODE.KICKED,
-]);
-
 export function useNexconnStatus() {
   return useConnection((state) => state.status);
 }
@@ -52,7 +45,7 @@ export function NexconnProvider({ token, children }: { token?: string | null; ch
         }
       } catch (error) {
         const { code } = useConnection.getState();
-        if (!refresh && code !== null && !noRefresh.has(code) && !controller.signal.aborted) {
+        if (!refresh && (code === CONNECTION_CODE.TOKEN_EXPIRED || code === CONNECTION_CODE.TOKEN_INCORRECT) && !controller.signal.aborted) {
           await connectSession(true);
           return;
         }
@@ -73,7 +66,17 @@ export function NexconnProvider({ token, children }: { token?: string | null; ch
       void disconnectNexconn().catch(() => undefined);
     }
 
+    function resume() {
+      const { status, code } = useConnection.getState();
+      if (token === undefined && document.visibilityState === "visible" && status === "offline" && code !== CONNECTION_CODE.KICKED) {
+        setAttempt((value) => value + 1);
+      }
+    }
+    document.addEventListener("visibilitychange", resume);
+    window.addEventListener("online", resume);
     return () => {
+      document.removeEventListener("visibilitychange", resume);
+      window.removeEventListener("online", resume);
       controller.abort();
       queueMicrotask(() => {
         if (session === lifecycle.generation) void disconnectNexconn().catch(() => undefined);

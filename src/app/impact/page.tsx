@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 function Tile({ label, value, note, highlight = false }: { label: string; value: string; note?: string; highlight?: boolean }) {
   return (
-    <div className={`rounded-2xl border p-4 ${highlight ? "border-transparent bg-primary text-primary-foreground" : "border-[#e9e7f4] bg-white"}`}>
+    <div className={`rounded-2xl border p-4 ${highlight ? "border-transparent bg-primary text-primary-foreground" : "border-border bg-card"}`}>
       <dt className={`text-xs font-medium ${highlight ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{label}</dt>
       <dd className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">{value}</dd>
       {note && <dd className={`mt-0.5 text-xs ${highlight ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{note}</dd>}
@@ -40,7 +40,7 @@ function Stats({ impact }: { impact: Impact }) {
         <Tile label="Upvotes" value={formatCount(totals.upvotes)} />
         <Tile label="Demo sessions" value={formatCount(totals.demoSessions)} note="judges and visitors" />
       </dl>
-      <section className="mt-5 rounded-2xl border border-[#e9e7f4] bg-white p-4">
+      <section className="mt-5 rounded-2xl border border-border bg-card p-4">
         <DailyChart days={impact.daily} />
       </section>
     </>
@@ -54,7 +54,7 @@ async function LiveImpact() {
     impact = await getImpact();
   } catch {
     return (
-      <div role="alert" className="rounded-2xl border border-destructive/30 bg-white p-5">
+      <div role="alert" className="rounded-2xl border border-destructive/30 bg-card p-5">
         <p className="font-semibold">Live numbers are unavailable right now.</p>
         <p className="mt-1 text-sm text-muted-foreground">We couldn’t reach the database. Give it a minute.</p>
         <Link href="/impact" prefetch={false} className="mt-3 inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4">Try again</Link>
@@ -66,7 +66,7 @@ async function LiveImpact() {
     <>
       <p className="mb-4 text-sm text-muted-foreground">Updated {formatUpdated(impact.updatedAt)} · refreshes every minute</p>
       {isEmptyImpact(impact) && (
-        <p role="status" className="mb-4 rounded-2xl bg-primary/8 p-4 text-sm text-[#241c83]">
+        <p role="status" className="mb-4 rounded-2xl bg-primary/8 p-4 text-sm text-primary">
           No activity yet. Numbers fill in as students join. <Link href="/try" className="font-medium underline underline-offset-4">Try the demo</Link> in the meantime.
         </p>
       )}
@@ -89,7 +89,7 @@ function ImpactSkeleton() {
 
 export default function ImpactPage() {
   return (
-    <main className="min-h-dvh bg-[#f9f8fd]">
+    <main className="min-h-dvh bg-muted/45">
       <div className="mx-auto w-full max-w-3xl px-4 pt-4 pb-12 sm:px-6">
         <Link href="/" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary">
           <ArrowLeft aria-hidden="true" className="size-4" />DoubtRoom
