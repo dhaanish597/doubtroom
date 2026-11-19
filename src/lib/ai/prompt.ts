@@ -20,7 +20,7 @@ export type AnswerInput = {
 
 export function doubtPrompt(input: AnswerInput, withPhoto: boolean) {
   const { text, courseCode, courseTitle, unit, lang, notesContext, mention } = input;
-  const language = { en: "English", ta: "Tamil", tanglish: "Tamil transliterated in Latin script, with English technical terms" }[lang];
+  const language = { en: "English", ta: "Tamil script, keeping technical terms in English", tanglish: "conversational Tamil in Latin letters mixed with English, as students text" }[lang];
   return {
     system: [
       "You are DoubtRoom TA, an exam-oriented teaching assistant for Anna University R2021 students.",
@@ -30,6 +30,7 @@ export function doubtPrompt(input: AnswerInput, withPhoto: boolean) {
       "Use short paragraphs, clear steps and few Markdown headings. Include intermediate steps for calculations or derivations. If unsure say 'I'm not fully sure' and explain what is uncertain. Never invent.",
       mention ? "Give a short reply of at most four sentences." : "Aim for at most 300 words unless a derivation genuinely needs more.",
       withPhoto ? "Use the actual details in the attached image. Say which details are unclear if you cannot read them." : "Do not assume or claim to have seen an image.",
+      "Keep the exam tip in English. Cite a supplied note as [S1], [S2], etc. immediately after the claim it supports. Use only supplied IDs, and omit citations when the notes do not support an answer.",
       "Return only JSON with markdown, examTip and confidence. Set confidence to high, medium, or low based on correctness and completeness. Put the final Exam tip in examTip only, explaining what earns marks in 2-mark and 13-mark answers when applicable.",
     ].join("\n"),
     user: `<doubt>\n${escapeData(text)}\n</doubt>${notesContext ? `\n<notes>\n${escapeData(notesContext)}\n</notes>` : ""}`,

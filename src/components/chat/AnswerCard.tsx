@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import dynamic from "next/dynamic";
 import { BadgeCheck, Ellipsis, PenLine, ThumbsUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AskSeniorSheet } from "@/components/mentor/MentorList";
 import { VerifyButton } from "@/components/mentor/VerifyButton";
+import { DEMO_NOTE_TITLE, DEMO_NOTE_PATH } from "@/lib/ai/demo-note";
 import { useRoomContext } from "@/components/rooms/RoomContext";
 import { ApiFailure, rememberVote, setVote, startSeniorReply, useAnswerUi } from "@/lib/answers/client";
 import { UNVERIFY_WINDOW_MS, canUndoVerification, nextVote, voteCount, type VoteState } from "@/lib/answers/rules";
 import type { AnswerContent } from "@/lib/nexconn/messages";
 import { useConnection } from "@/lib/stores/connection";
 import { useMessages } from "@/lib/stores/messages";
+
+const AnswerMarkdown = dynamic(() => import("./AnswerMarkdown"), { loading: () => <span role="status">Loading answer…</span> });
 
 /** Re-renders until the undo window closes, so the Undo button disappears on time. */
 function useUndoOpen(verifiedAt: number) {
@@ -154,10 +156,12 @@ export function AnswerCard({ answer, metadata, messageId, roomId, jumpTo }: {
         </button>
       ) : <p className="line-clamp-2 rounded-md bg-muted p-2 text-xs text-muted-foreground wrap-anywhere">{answer.quotedText}</p>}
       <div className="space-y-2 wrap-anywhere [&_a]:underline [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:ps-5 [&_ul]:list-disc [&_ul]:ps-5 [&_pre]:overflow-x-auto [&_pre]:rounded-md [&_pre]:bg-muted [&_pre]:p-2 [&_th]:text-start [&_th]:font-semibold [&_td]:border [&_td]:p-1">
-        <ReactMarkdown skipHtml disallowedElements={["img"]} remarkPlugins={[remarkGfm]} components={{
-          table: ({ children }) => <div className="overflow-x-auto"><table>{children}</table></div>,
-        }}>{answer.markdown}</ReactMarkdown>
+        <AnswerMarkdown markdown={answer.markdown} />
       </div>
+      {Boolean(answer.sources?.length) && <div className="flex flex-wrap items-center gap-1 text-xs" aria-label="From your notes">
+        <strong>From your notes</strong>
+        {answer.sources?.map((source, i) => <span key={i} className="rounded-md bg-secondary px-2 py-1">[S{i + 1}] {source.title === DEMO_NOTE_TITLE ? <a href={DEMO_NOTE_PATH} className="underline" target="_blank" rel="noreferrer">{source.title}</a> : source.title}{source.page ? ` p.${source.page}` : ""}</span>)}
+      </div>}
       {answer.examTip && !answer.failed && <p className="rounded-lg bg-indigo-50 px-3 py-2 text-indigo-950"><strong>Exam tip </strong>{answer.examTip}</p>}
       <footer className="flex flex-wrap items-start gap-x-1">
         {!answer.failed && <UpvoteButton answerId={answer.answerId} roomId={roomId} messageId={messageId} count={voteCount(metadata.get("up"))} />}

@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 import { EvePanel } from "@/components/admin/EvePanel";
+import { NotesUpload } from "@/components/admin/NotesUpload";
 import { MetricsExport } from "@/components/admin/MetricsExport";
 import { ReportsPanel } from "@/components/admin/ReportsPanel";
 import { RolesPanel } from "@/components/admin/RolesPanel";
@@ -53,6 +54,7 @@ async function AdminGate() {
       <ReportsPanel />
       <RolesPanel />
       <EvePanel />
+      <NotesUpload />
       <MetricsExport />
     </main>
   );

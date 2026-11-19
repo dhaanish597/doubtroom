@@ -1,0 +1,53 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 845 >>
+stream
+BT /F1 20 Tf 55 745 Td (DoubtRoom TCP revision sheet) Tj /F1 12 Tf 17 TL
+T*
+T* (CS3591 Computer Networks  |  Unit 2) Tj
+T*
+T* (Three-way handshake) Tj
+T*
+T* (Suppose A chooses initial sequence number x and B chooses y. A sends SYN) Tj
+T* (with sequence x. B returns SYN + ACK with sequence y and acknowledgement x +) Tj
+T* (1. A returns ACK with acknowledgement y + 1. Each SYN consumes one sequence) Tj
+T* (number.) Tj
+T*
+T* (The final ACK tells B that A received B's initial sequence number. Two) Tj
+T* (messages would leave B unable to distinguish a working return path from a) Tj
+T* (delayed or lost SYN + ACK.) Tj
+T*
+T* (Exam practice) Tj
+T*
+T* (Sketch both hosts with time increasing downward. Label each arrow with the) Tj
+T* (flags, sequence number and acknowledgement number.) Tj
+T*
+T* (Original DoubtRoom study material. Page 1.) Tj
+ET
+endstream
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1207
+%%EOF
