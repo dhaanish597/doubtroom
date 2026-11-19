@@ -36,8 +36,6 @@ const policies = {
 
 type PageProps = { params: Promise<{ policy: string }> };
 
-export const dynamicParams = false;
-
 export function generateStaticParams() {
   return Object.keys(policies).map((policy) => ({ policy }));
 }
