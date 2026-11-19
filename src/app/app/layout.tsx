@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from "react";
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 
 import { getPageActor } from "@/lib/auth/actor";
@@ -11,14 +12,15 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 }
 
 async function AuthenticatedApp({ children }: { children: ReactNode }) {
+  await connection();
   const actor = await getPageActor();
   if (!actor) redirect("/login");
   if (actor.kind === "user" && !actor.profile.onboarded_at) redirect("/onboarding");
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div data-app-shell className="flex min-h-dvh flex-col">
       <NexconnProvider>
-        <div className="flex-1">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col">{children}</div>
         <AppNav mentor={actor.profile.role === "mentor"} />
       </NexconnProvider>
     </div>

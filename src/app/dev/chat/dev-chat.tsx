@@ -110,7 +110,7 @@ function DevChat({ token, onToken }: { token: string | null; onToken: (token: st
       </form>
       <ConnectionBanner onReconnect={reconnect} />
       {error && <p role="alert">{error}</p>}
-      {connectedUser && <GroupChat roomId={DEV_ROOM_ID} title="DoubtRoom test chat" />}
+      {connectedUser && <div className="flex h-[min(65dvh,38rem)] min-h-72 flex-col overflow-hidden rounded-2xl border"><GroupChat roomId={DEV_ROOM_ID} title="DoubtRoom test chat" dev /></div>}
     </main>
   );
 }

@@ -1,9 +1,9 @@
 # STATUS
 
 Last updated: 19 Nov 2026 by Codex
-Current phase: 3, Google sign-in, onboarding and room provisioning
+Current phase: 4, Room experience
 Live URL: https://doubtroom-ochre.vercel.app
-Last good tag: phase-1
+Last good tag: phase-4
 
 ## Done
 - Phase 1 scaffold, branded landing page, shadcn components, environment validation and example catalog.
@@ -14,6 +14,9 @@ Last good tag: phase-1
 - Phase 2 SDK client and server adapters, protected dev token endpoint, and `/dev/chat` room. Typecheck, lint, 16 tests and production build passed. Local production smoke verified the route guard. With real Nexconn credentials in `.env.local`, Alice and Bob joined `devroom`, exchanged messages in both directions, and reloaded message history after reconnecting. The same checks passed on Vercel after the Production credential redeploy.
 
 - Phase 3 implements Google OAuth, protected SSR routes, profile resolution, chat sessions, onboarding, room provisioning, and the room list and chat shell. Typecheck, lint, 24 unit tests, and the production build passed. Local production HTTP checks used Supabase fixtures. PostgreSQL checks covered cache and refresh behavior, duplicate event prevention, onboarding finalization, and RPC grants.
+
+- Phase 4 adds the room header, paginated chat timeline, message rendering, retry, photo upload, mentions, live room previews and unread counts, and room analytics. Typecheck, lint, build, and 28 unit tests passed.
+- Two distinct Nexconn users in an isolated test group passed the browser checks for history, new-message scrolling, desktop and mobile-width send, member mentions, unread clearing, photo viewing, invalid custom content, and analytics. Supabase used local fixtures. A physical phone and live Google account remain unverified.
 
 ## In progress
 - Apply `supabase/migrations/0002_phase3.sql` after the initial schema, configure the Supabase credentials and invite codes in `.env.local`, then run `pnpm seed`. Live Google sign-in and Nexconn room provisioning and messaging still need the two-account acceptance check.
@@ -27,6 +30,7 @@ Last good tag: phase-1
 - D-003 records the supporting dependencies for server-only environment validation and the generated shadcn components.
 - D-004 records HTTPS URL handling, endpoint success codes, and the reserved dev identity namespace.
 - D-005 records the Phase 3 database migration and development-only chat tooling.
+- D-006 records the verified Phase 4 media helper and the SDK history cursor workaround.
 
 ## Env vars added since plan
 - None. All 26 application variables are listed in `.env.example`.

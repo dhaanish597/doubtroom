@@ -6,6 +6,7 @@ import { BookOpen, ChevronRight, MessagesSquare, UsersRound } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { initNexconn } from "@/lib/nexconn/client";
+import { messagePreview } from "@/lib/nexconn/messages";
 import type { Room } from "@/lib/rooms/types";
 import { useConnection } from "@/lib/stores/connection";
 import { useRooms, type ChannelPreview } from "@/lib/stores/rooms";
@@ -31,8 +32,9 @@ async function loadChannelPreviews(rooms: Room[], active: () => boolean) {
       const message = channel.latestMessage;
       previews[channel.channelId] = {
         unread: channel.unreadCount,
-        preview: message ? typeof message.content?.text === "string" ? message.content.text : "New message" : null,
+        preview: message ? messagePreview(message.messageType, message.content) : null,
         sentAt: message?.sentTime ?? 0,
+        lastId: message?.messageId,
       };
     }
     if (!advanced) break;
@@ -53,7 +55,7 @@ export function RoomList() {
 
   useEffect(() => {
     const controller = new AbortController();
-    useRooms.setState({ rooms: null, channels: {} });
+    useRooms.setState({ rooms: null });
     fetch("/api/rooms", { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Rooms unavailable");
@@ -64,7 +66,7 @@ export function RoomList() {
         if (!controller.signal.aborted) setError("Could not load your rooms");
       });
     return () => controller.abort();
-  }, [attempt]);
+  }, [attempt, userId]);
 
   useEffect(() => {
     if (!rooms?.length || !userId || status !== "connected") return;
@@ -72,7 +74,18 @@ export function RoomList() {
     const timer = setTimeout(() => {
       void loadChannelPreviews(rooms, () => active).then((channels) => {
         if (!active) return;
-        useRooms.setState({ channels });
+        useRooms.setState((state) => {
+          const merged = { ...state.channels };
+          for (const [id, fetched] of Object.entries(channels)) {
+            const current = merged[id];
+            const readThrough = current?.readThrough;
+            const unread = readThrough !== undefined && fetched.sentAt <= readThrough ? 0 : fetched.unread;
+            merged[id] = current && current.sentAt > fetched.sentAt
+              ? { ...current, unread: Math.max(current.unread, unread) }
+              : { ...fetched, unread, readThrough };
+          }
+          return { channels: merged };
+        });
         setPreviewError(false);
       }).catch(() => {
         if (active) setPreviewError(true);
@@ -121,7 +134,7 @@ export function RoomList() {
                   <span className="block font-medium">{room.title}</span>
                   <span className="block truncate text-sm text-muted-foreground">{preview?.preview ?? room.courseCode ?? (room.kind === "section" ? "Section room" : "Demo room")}</span>
                 </span>
-                {Boolean(preview?.unread) && <span className="rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground" aria-label={`${preview.unread} unread messages`}>{preview.unread > 99 ? "99+" : preview.unread}</span>}
+                {Boolean(preview?.unread) && <span className="rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground" aria-label={`${preview.unread} unread ${preview.unread === 1 ? "message" : "messages"}`}>{preview.unread > 99 ? "99+" : preview.unread}</span>}
                 <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
               </Link>
             </li>

@@ -46,3 +46,13 @@ unique event index for one `connected` event per profile per India Standard Time
 Phase 3 keeps the existing Web Chat SDK and custom React UI from D-001. The production build
 returns 404 for the Phase 2 dev chat page and token endpoint. The Try cookie verifier accepts
 a signed profile ID with the `doubtroom-try` audience and an expiry. Phase 9 will issue cookies.
+
+## D-006 Phase 4 media and timeline behavior
+
+Date: 19 Nov 2026 | Phase: 4
+
+The installed Web Chat SDK exposes `Helper.createSendImageMessageParams`, which prepares the photo and its thumbnail. The composer sends it through `sendMediaMessage` and uses `onUploadProgress`. If the browser cannot create the thumbnail, the existing file helper sends the photo as a downloadable attachment.
+
+Live Nexconn history returned records oldest-first even with `isAscending: false`. The installed query advances using the last returned record, which caused overlapping pages. The room uses `BaseChannel.createMessagesQuery` with the oldest received timestamp as `startTime` for the next `loadNextPage` call. It merges messages by ID and keeps the first page at 30 while the SDK delivers its offline backlog.
+
+The room list keeps the timestamp of the latest confirmed read so temporarily stale channel snapshots cannot restore the same unread badge. Events accept only the room ID and an allowlisted event name.

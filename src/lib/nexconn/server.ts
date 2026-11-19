@@ -162,3 +162,25 @@ export async function setMessageMetadata(
   await request("set message metadata", () =>
     messages.setChannelTypeMessageMetadata({ channelType, channelId, messageId, userId, metadata }));
 }
+
+export async function listGroupMemberIds(channelId: string) {
+  const ids = new Set<string>();
+  const cursors = new Set<string>();
+  let pageToken: string | undefined;
+
+  do {
+    const { result } = await request("list group members", () =>
+      groups.listGroupChannelMembers({ channelId, pageSize: 100, pageToken }));
+    if (!result?.members) throw new NexconnError("INVALID_RESPONSE", "Group member list is missing");
+    for (const { userId } of result.members) {
+      if (userId && /^[a-z0-9_]{1,64}$/.test(userId)) ids.add(userId);
+    }
+    pageToken = result.pageToken || undefined;
+    if (pageToken) {
+      if (cursors.has(pageToken)) throw new NexconnError("INVALID_RESPONSE", "Group member cursor repeated");
+      cursors.add(pageToken);
+    }
+  } while (pageToken);
+
+  return [...ids];
+}

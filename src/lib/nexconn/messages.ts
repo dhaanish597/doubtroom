@@ -83,3 +83,83 @@ export function safeParseAnnounce(content: unknown) {
 export function safeParseRecap(content: unknown) {
   return recapSchema.safeParse(decodeContent(content));
 }
+
+// Mirror the pinned SDK values without importing its browser runtime.
+export const MESSAGE_STATUS = { SENDING: 10, FAILED: 20 } as const satisfies Record<string, import("@nexconn/chat").SentStatus>;
+
+export const STANDARD_MSG = {
+  TEXT: "RC:TxtMsg",
+  IMAGE: "RC:ImgMsg",
+  FILE: "RC:FileMsg",
+} as const;
+
+export function mediaUrl(value: unknown) {
+  if (typeof value !== "string") return null;
+  try {
+    const url = new URL(value);
+    return (url.protocol === "https:" || url.protocol === "http:") && !url.username && !url.password ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+const textSchema = z.object({ text: z.string(), mentionedInfo: z.object({
+  userIdList: z.array(z.string().max(64)).max(100).optional(),
+}).optional() });
+const imageSchema = z.object({ remoteUrl: z.string(), thumbnailBase64: z.string().optional() });
+const fileSchema = z.object({ remoteUrl: z.string(), name: z.string(), size: z.number().finite().nonnegative() });
+
+export function renderableMessage(messageType: string, content: unknown) {
+  switch (messageType) {
+    case STANDARD_MSG.TEXT: {
+      const parsed = textSchema.safeParse(decodeContent(content));
+      if (parsed.success) return { kind: "text" as const, ...parsed.data };
+      break;
+    }
+    case STANDARD_MSG.IMAGE: {
+      const parsed = imageSchema.safeParse(decodeContent(content));
+      const url = parsed.success && mediaUrl(parsed.data.remoteUrl);
+      if (!url || !parsed.success) break;
+      const base64 = parsed.data.thumbnailBase64;
+      const thumbnail = base64 && base64.length <= 110_000 && /^[A-Za-z0-9+/]+={0,2}$/.test(base64)
+        ? `data:image/jpeg;base64,${base64}` : url;
+      return { kind: "image" as const, url, thumbnail };
+    }
+    case STANDARD_MSG.FILE: {
+      const parsed = fileSchema.safeParse(decodeContent(content));
+      const url = parsed.success && mediaUrl(parsed.data.remoteUrl);
+      if (url && parsed.success) return { kind: "file" as const, url, name: parsed.data.name, size: parsed.data.size };
+      break;
+    }
+    case MSG.DOUBT: {
+      const parsed = safeParseDoubt(content);
+      if (parsed.success) return { kind: "card" as const, label: "Doubt", text: parsed.data.text };
+      break;
+    }
+    case MSG.ANSWER: {
+      const parsed = safeParseAnswer(content);
+      if (parsed.success) return { kind: "card" as const, label: "TA answer", text: parsed.data.markdown };
+      break;
+    }
+    case MSG.ANNOUNCE: {
+      const parsed = safeParseAnnounce(content);
+      if (parsed.success) return { kind: "card" as const, label: "Announcement", text: parsed.data.title };
+      break;
+    }
+    case MSG.RECAP: {
+      const parsed = safeParseRecap(content);
+      if (parsed.success) return { kind: "card" as const, label: "Recap", text: parsed.data.date };
+      break;
+    }
+  }
+  return { kind: "unsupported" as const };
+}
+
+export function messagePreview(messageType: string, content: unknown) {
+  const message = renderableMessage(messageType, content);
+  if (message.kind === "text") return message.text;
+  if (message.kind === "image") return "Photo";
+  if (message.kind === "file") return message.name;
+  if (message.kind === "card") return message.label;
+  return "Unsupported message";
+}

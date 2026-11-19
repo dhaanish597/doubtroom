@@ -7,3 +7,5 @@ export type Room = {
   memberCount: number;
   eve?: { id: string; opensAt: string; closesAt: string };
 };
+
+export type RoomMember = { userId: string; name: string };

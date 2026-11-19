@@ -4,8 +4,8 @@ import { create } from "zustand";
 type MessageChannel = Pick<ChannelIdentifier, "channelType" | "channelId">;
 type SdkMessage = Message<object>;
 export type ChatMessage = Pick<SdkMessage,
-  "messageId" | "messageType" | "senderUserId" | "sentTime" | "content" | "metadata"
->;
+  "messageId" | "messageType" | "senderUserId" | "sentTime" | "metadata"
+> & { content: unknown; sentStatus?: SdkMessage["sentStatus"] };
 
 export function channelKeyFor({ channelType, channelId }: MessageChannel) {
   return `${channelType}:${channelId}`;
@@ -54,6 +54,7 @@ export const useMessages = create<MessagesState>((set) => ({
           senderUserId: message.senderUserId,
           sentTime: message.sentTime,
           content: message.content,
+          sentStatus: message.sentStatus ?? existing?.sentStatus,
           metadata,
         });
         delete pendingMetadata[key][message.messageId];

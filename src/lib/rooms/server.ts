@@ -1,6 +1,8 @@
 import "server-only";
 
-import type { Actor } from "@/lib/auth/actor";
+import { connection } from "next/server";
+import { notFound, redirect } from "next/navigation";
+import { getPageActor, type Actor } from "@/lib/auth/actor";
 import { adminSupabase } from "@/lib/supabase/admin";
 import type { Room } from "./types";
 
@@ -16,6 +18,7 @@ type RoomRow = {
 
 export async function roomsForActor(actor: Actor, roomId?: string): Promise<Room[]> {
   if (actor.kind === "try" && roomId && !roomId.startsWith("demo_")) return [];
+  await connection();
   const now = new Date().toISOString();
   const db = adminSupabase();
   let membership = db.from("room_members").select("room_id").eq("profile_id", actor.profile.id);
@@ -49,4 +52,14 @@ export async function roomsForActor(actor: Actor, roomId?: string): Promise<Room
       ...(eve ? { eve: { id: eve.id, opensAt: eve.opens_at, closesAt: eve.closes_at } } : {}),
     };
   });
+}
+
+export async function requireRoom(roomId: string) {
+  const actor = await getPageActor();
+  if (!actor) redirect("/login");
+  if (actor.kind === "user" && !actor.profile.onboarded_at) redirect("/onboarding");
+  if (!/^[a-z0-9_]{1,64}$/.test(roomId)) notFound();
+  const [room] = await roomsForActor(actor, roomId);
+  if (!room) notFound();
+  return room;
 }

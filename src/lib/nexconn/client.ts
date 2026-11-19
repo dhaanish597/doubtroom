@@ -2,7 +2,9 @@
 
 import { publicEnv } from "@/lib/public-env";
 import { notifyChannelChange, useConnection, type ChatStatus } from "@/lib/stores/connection";
-import { useMessages } from "@/lib/stores/messages";
+import { channelKeyFor, useMessages } from "@/lib/stores/messages";
+import { resetProfiles } from "@/lib/stores/profiles";
+import { recordRoomMessage, resetRooms } from "@/lib/stores/rooms";
 import { MSG } from "./messages";
 
 type ChatSdk = typeof import("@nexconn/chat");
@@ -43,7 +45,18 @@ export function initNexconn(): Promise<ChatSdk> {
     NCEngine.addMessageHandler("app", new MessageHandler({
       onMessageReceived({ messages }) {
         if (!currentToken) return;
-        useMessages.getState().mergeMessages(messages);
+        const store = useMessages.getState();
+        const seen = new Set<string>();
+        const userId = useConnection.getState().userId;
+        for (const message of messages) {
+          const key = channelKeyFor(message.channelIdentifier);
+          const identity = `${key}:${message.messageId}`;
+          if (!message.messageId || seen.has(identity)) continue;
+          seen.add(identity);
+          const known = store.byChannel[key]?.some((entry) => entry.messageId === message.messageId);
+          recordRoomMessage(message, !known && Boolean(userId) && message.senderUserId !== userId && message.isCounted);
+        }
+        store.mergeMessages(messages);
         notifyChannelChange();
       },
       onMessageMetadataUpdated({ channelIdentifier, messageId, metadata }) {
@@ -79,7 +92,7 @@ export function connectNexconn(token: string): Promise<string> {
       if (currentToken && currentToken !== token) {
         currentToken = undefined;
         await chat.NCEngine.disconnect();
-        useMessages.getState().reset();
+        resetChatStores();
       }
       currentToken = token;
       useConnection.setState({ status: "connecting", userId: null, code: null, error: null, channelsSynced: false });
@@ -111,8 +124,14 @@ export function disconnectNexconn(): Promise<void> {
         await sdk?.NCEngine.disconnect();
       }
     } finally {
-      useMessages.getState().reset();
+      resetChatStores();
       useConnection.setState({ status: "idle", userId: null, code: null, error: null, channelsSynced: false });
     }
   });
+}
+
+function resetChatStores() {
+  useMessages.getState().reset();
+  resetProfiles();
+  resetRooms();
 }

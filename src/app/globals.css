@@ -128,3 +128,8 @@
     @apply font-sans;
   }
 }
+
+[data-app-shell]:has([data-room-chat]) {
+  height: 100dvh;
+  overflow: hidden;
+}

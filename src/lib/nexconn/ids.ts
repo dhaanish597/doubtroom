@@ -5,11 +5,7 @@ import { z } from "zod";
 const trySuffix = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 10);
 const examDateSchema = z.iso.date();
 
-export const BOT_IDS = {
-  TA: "bot_ta",
-  DEMO_MENTOR: "demo_mentor",
-  DEMO_PRIYA: "demo_priya",
-} as const;
+export { BOT_IDS } from "./identities";
 
 export const DEMO_ROOM_ID = "demo_cn";
 
