@@ -113,3 +113,11 @@ Phase 9 adds no dependencies, no environment variables and no migration. It keep
 **PWA.** Icons were rasterized from `public/icons/*.svg` with macOS `sips`, so no image dependency was added. `public/sw.js` caches the `/offline` page, the manifest, icons and `/_next/static/*`. It never caches API responses or HTML pages, because pages may contain signed-in content. Offline navigations get `/offline`. The worker is registered from the `/app` layout in production builds only. `beforeinstallprompt` is captured there for the Install button on `/app/me`. iOS gets Share and "Add to Home Screen" instructions. The manifest uses `start_url: /app` and a white background.
 
 **Impact.** Metrics are computed in TypeScript from existing tables, so no migration is required. Totals use head counts. Timestamps are read in pages of 1,000 rows, up to 20 pages. Medians use the latest 1,000 answers. Days follow India Standard Time. Demo rooms and try or bot profiles are excluded, and try profiles are counted separately as `demoSessions`. Results are cached in memory for 60 seconds per instance and sent with `s-maxage=60`, and failures are not cached. "Rooms with activity" means rooms with any doubt, or with a `message_sent` event in the last 7 days. `DEMO_ROOM_ID` moved to the browser-safe `identities.ts`, and `ids.ts` re-exports it.
+
+## D-013 Server text format and group history settings
+
+Date: 19 Nov 2026 | Phase: 9 follow-up
+
+Server-sent `RC:TxtMsg` (demo chatter, the demo mentor's DM reply) rendered as "Unsupported message". The installed `@nexconn/chat` 26.2.1 types say the plain-text body is `text` on the client while the engine field is `content`, mapped internally. The server helpers now send `{ content }`, and the client text parser also accepts `content`, so the seven messages seeded earlier render without re-seeding.
+
+The first live `/try` showed an empty demo room: new group members only see messages sent after they join. In the Nexconn Console (Chat settings, Group Channels) we turned on "Enable pre-join history access by new member", so judges and students who join later see earlier doubts. We also enabled "Restrict chat history access to members", so a crafted client cannot read a room it has not joined, which narrows the sandbox gap noted in D-010.

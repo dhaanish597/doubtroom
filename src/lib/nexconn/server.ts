@@ -132,15 +132,16 @@ export async function joinGroup(channelId: string, userIds: string[]): Promise<v
 
 type CustomType = (typeof MSG)[keyof typeof MSG] | typeof TEXT_MESSAGE;
 const TEXT_MESSAGE = "RC:TxtMsg";
+// The wire format of RC:TxtMsg uses `content`; the Web SDK maps it to `text` for clients (D-013).
 
 /** Plain text group message, for example seeded demo chatter. */
 export function sendGroupText(fromUserId: string, channelId: string, text: string, opts: SendGroupOptions = {}) {
-  return sendGroupCustom(fromUserId, channelId, TEXT_MESSAGE, { text }, opts);
+  return sendGroupCustom(fromUserId, channelId, TEXT_MESSAGE, { content: text }, opts);
 }
 
 /** Plain text DM from a server identity (the demo mentor). Returns the delivered message ID. */
 export async function sendDirectText(fromUserId: string, toUserId: string, text: string): Promise<string | undefined> {
-  const content = JSON.stringify({ text });
+  const content = JSON.stringify({ content: text });
   if (Buffer.byteLength(content, "utf8") > 128 * 1024) {
     throw new RangeError("Nexconn message content exceeds 128 KB");
   }

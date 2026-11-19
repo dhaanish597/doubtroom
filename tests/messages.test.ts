@@ -88,3 +88,10 @@ describe("reference (reply) messages", () => {
     expect(renderableMessage("RC:ReferenceMsg", { text: "Hi" })).toEqual({ kind: "unsupported" });
   });
 });
+
+describe("server-sent text", () => {
+  it("renders RC:TxtMsg content that uses the wire field `content`", () => {
+    expect(renderableMessage("RC:TxtMsg", { content: "hello" })).toMatchObject({ kind: "text", text: "hello" });
+    expect(renderableMessage("RC:TxtMsg", JSON.stringify({ content: "hi" }))).toMatchObject({ kind: "text", text: "hi" });
+  });
+});

@@ -105,9 +105,14 @@ export function mediaUrl(value: unknown) {
   }
 }
 
-const textSchema = z.object({ text: z.string(), mentionedInfo: z.object({
-  userIdList: z.array(z.string().max(64)).max(100).optional(),
-}).optional() });
+// Server-sent text that predates D-013 may arrive with the raw wire field `content`.
+const textSchema = z.preprocess(
+  (value) => value && typeof value === "object" && !("text" in value) && typeof (value as { content?: unknown }).content === "string"
+    ? { ...value, text: (value as { content: string }).content } : value,
+  z.object({ text: z.string(), mentionedInfo: z.object({
+    userIdList: z.array(z.string().max(64)).max(100).optional(),
+  }).optional() }),
+);
 const imageSchema = z.object({ remoteUrl: z.string(), thumbnailBase64: z.string().optional() });
 const fileSchema = z.object({ remoteUrl: z.string(), name: z.string(), size: z.number().finite().nonnegative() });
 // Matches the installed SDK's ReferenceMessageContent (reply / quote).
