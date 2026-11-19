@@ -5,6 +5,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AskSeniorSheet } from "@/components/mentor/MentorList";
+import { useRoomContext } from "@/components/rooms/RoomContext";
 import type { AnswerContent } from "@/lib/nexconn/messages";
 
 export function AnswerCard({ answer, metadata, messageId, roomId, jumpTo }: {
@@ -17,6 +19,7 @@ export function AnswerCard({ answer, metadata, messageId, roomId, jumpTo }: {
   const [reason, setReason] = useState("");
   const [report, setReport] = useState<"idle" | "sending" | "failed" | "sent">("idle");
   const verified = metadata.get("ver") === "1";
+  const course = useRoomContext()?.courseCode;
 
   async function sendReport(event: FormEvent) {
     event.preventDefault();
@@ -58,7 +61,11 @@ export function AnswerCard({ answer, metadata, messageId, roomId, jumpTo }: {
       {!answer.failed && (
         <footer className="flex flex-wrap gap-x-1">
           <Button type="button" variant="ghost" className="min-h-11 px-2 text-xs" disabled>Upvote ({metadata.get("up") ?? "0"})</Button>
-          <Button type="button" variant="ghost" className="min-h-11 px-2 text-xs" disabled>Ask a senior</Button>
+          {course && (
+            <AskSeniorSheet course={course} roomId={roomId} doubtMessageId={answer.doubtMessageId}>
+              <Button type="button" variant="ghost" className="min-h-11 px-2 text-xs">Ask a senior</Button>
+            </AskSeniorSheet>
+          )}
           <Dialog>
             <DialogTrigger asChild><Button type="button" variant="ghost" className="min-h-11 px-2 text-xs">Report</Button></DialogTrigger>
             <DialogContent>

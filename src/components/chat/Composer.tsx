@@ -15,15 +15,24 @@ export type SendDraft =
   | { kind: "photo"; file: File }
   | { kind: "doubt"; doubtId: string; text: string; unit?: string; file?: File };
 
-export function Composer({ roomId, units, allowDoubts, connected, progress, onSend }: {
+export function Composer({ roomId, units, allowDoubts, connected, progress, onSend, allowMentions = true, prefill = "", onInput }: {
   roomId: string;
   units: string[];
   allowDoubts: boolean;
   connected: boolean;
   progress: number | null;
   onSend: (draft: SendDraft) => void;
+  allowMentions?: boolean;
+  /** Fills an empty composer once, for example with a quoted doubt. */
+  prefill?: string;
+  onInput?: () => void;
 }) {
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(prefill);
+  const [appliedPrefill, setAppliedPrefill] = useState(prefill);
+  if (prefill !== appliedPrefill) {
+    setAppliedPrefill(prefill);
+    if (prefill && !draft) setDraft(prefill.slice(0, 2000));
+  }
   const [mode, setMode] = useState<"chat" | "doubt">("chat");
   const [unit, setUnit] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -37,7 +46,7 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   const requestedCaret = useRef<number | null>(null);
   const attach = useRef<HTMLInputElement>(null);
   const memberRequest = useRef<AbortController | null>(null);
-  const mention = !dismissed && mode === "chat" ? mentionAt(draft, cursor) : null;
+  const mention = allowMentions && !dismissed && mode === "chat" ? mentionAt(draft, cursor) : null;
   const pickerOpen = Boolean(mention && connected);
   const options = mention ? members.filter(({ name }) => name.toLowerCase().includes(mention.query.toLowerCase())) : [];
 
@@ -66,10 +75,11 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   }
 
   function edit(value: string, caret: number) {
+    if (value.length > draft.length) onInput?.();
     setDraft(value);
     setCursor(caret);
     setDismissed(false);
-    if (connected && memberStatus === "idle" && mentionAt(value, caret)) fetchMembers();
+    if (allowMentions && connected && memberStatus === "idle" && mentionAt(value, caret)) fetchMembers();
   }
 
   function insertMention() {
@@ -163,7 +173,7 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
             setFile(selected);
           }} />
           <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Attach a photo" disabled={!connected || progress !== null} onClick={() => attach.current?.click()}><ImagePlus aria-hidden="true" /></Button>
-          {mode === "chat" && <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Mention someone" disabled={!connected} onClick={insertMention}><AtSign aria-hidden="true" /></Button>}
+          {mode === "chat" && allowMentions && <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Mention someone" disabled={!connected} onClick={insertMention}><AtSign aria-hidden="true" /></Button>}
           <textarea ref={input} rows={1} aria-label={mode === "doubt" ? "What’s your doubt?" : "Message"} placeholder={mode === "doubt" ? "What’s your doubt?" : "Write a message"} value={draft} maxLength={2000} disabled={!connected}
             onChange={(event) => edit(event.target.value, event.target.selectionStart)} onSelect={(event) => setCursor(event.currentTarget.selectionStart)}
             onKeyDown={(event) => {

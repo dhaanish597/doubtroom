@@ -8,7 +8,10 @@ export default async function MentorPage() {
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-7 sm:px-6">
       <h1 className="text-3xl font-semibold tracking-tight">Mentor</h1>
-      <p className="mt-5 rounded-xl border p-5 text-sm text-muted-foreground">Your mentor inbox will be available when doubt verification is ready.</p>
+      <section className="mt-5 space-y-2 rounded-xl border p-5 text-sm text-muted-foreground">
+        <p>Your inbox of open doubts arrives with answer verification.</p>
+        <p>Students who message you appear under Direct messages on the Rooms tab.</p>
+      </section>
     </main>
   );
 }

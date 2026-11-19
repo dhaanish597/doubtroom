@@ -7,10 +7,18 @@ import { requestOrigin } from "@/lib/request-origin";
 import { roomsForActor } from "@/lib/rooms/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 
-const eventSchema = z.strictObject({
-  name: z.enum(["message_sent", "room_opened", "doubt_posted"]),
-  props: z.strictObject({ roomId: z.string().regex(/^[a-z0-9_]{1,64}$/) }),
-});
+const chatId = z.string().regex(/^[a-z0-9_]{1,64}$/);
+const eventSchema = z.discriminatedUnion("name", [
+  z.strictObject({ name: z.enum(["message_sent", "room_opened", "doubt_posted"]), props: z.strictObject({ roomId: chatId }) }),
+  z.strictObject({ name: z.enum(["dm_started", "dm_message_sent"]), props: z.strictObject({ peerId: chatId }) }),
+]);
+
+async function peerExists(peerId: string) {
+  const { count, error } = await adminSupabase().from("profiles").select("id", { count: "exact", head: true })
+    .eq("nexconn_user_id", peerId);
+  if (error) throw error;
+  return Boolean(count);
+}
 
 export async function POST(request: Request) {
   await connection();
@@ -20,9 +28,12 @@ export async function POST(request: Request) {
     if (request.headers.get("origin") !== requestOrigin(request)) return apiError(403, "FORBIDDEN", "Submit events from DoubtRoom");
 
     const body = eventSchema.safeParse(await request.json().catch(() => null));
-    if (!body.success) return apiError(400, "INVALID_INPUT", "Invalid room event");
+    if (!body.success) return apiError(400, "INVALID_INPUT", "Invalid event");
     const { name, props } = body.data;
-    if (!(await roomsForActor(actor, props.roomId)).length) return apiError(404, "ROOM_NOT_FOUND", "Room not found");
+    if ("roomId" in props && !(await roomsForActor(actor, props.roomId)).length) return apiError(404, "ROOM_NOT_FOUND", "Room not found");
+    if ("peerId" in props && (props.peerId === actor.profile.nexconn_user_id || !(await peerExists(props.peerId)))) {
+      return apiError(404, "PEER_NOT_FOUND", "Chat partner not found");
+    }
 
     const { error } = await adminSupabase().from("events").insert({ profile_id: actor.profile.id, name, props });
     if (error) throw error;

@@ -9,6 +9,7 @@ import { MSG, safeParseAnswer } from "@/lib/nexconn/messages";
 import { groupMessages, messageDate } from "@/lib/rooms/timeline";
 import type { ChatMessage } from "@/lib/stores/messages";
 import { MessageBubble } from "./MessageBubble";
+import type { TickState } from "./ReadTicks";
 
 export type ScrollAnchor = { id: string; top: number };
 
@@ -22,7 +23,8 @@ export function captureMessageAnchor(viewport: HTMLDivElement | null): ScrollAnc
   return null;
 }
 
-export function MessageList({ roomId, messages, userId, ready, connected, loading, error, hasOlder, viewportRef, anchorRef, onLoad, onRetry }: {
+export function MessageList({ roomId, messages, userId, ready, connected, loading, error, hasOlder, viewportRef, anchorRef, onLoad, onRetry,
+  label = "Room messages", emptyTitle = "Be the first to ask a doubt", receiptFor }: {
   roomId: string;
   messages: ChatMessage[];
   userId: string | null;
@@ -35,6 +37,9 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
   anchorRef: RefObject<ScrollAnchor | null>;
   onLoad: () => void;
   onRetry: (id: string) => void;
+  label?: string;
+  emptyTitle?: string;
+  receiptFor?: (message: ChatMessage) => TickState | undefined;
 }) {
   const bottom = useRef(true);
   const pill = useRef<HTMLButtonElement>(null);
@@ -61,13 +66,13 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
       panel.scrollTo(0, panel.scrollHeight);
     }
     if (changed && newest.senderUserId !== userId && announcement.current) {
-      announcement.current.textContent = "New room message";
+      announcement.current.textContent = label === "Room messages" ? "New room message" : "New message";
     }
     if (pill.current) {
       if (jump) pill.current.hidden = true;
       else if (changed) pill.current.hidden = false;
     }
-  }, [messages, viewportRef, anchorRef, userId]);
+  }, [messages, viewportRef, anchorRef, userId, label]);
 
   const messageIds = new Set(messages.map(({ messageId }) => messageId));
   // Nexconn may omit a metadata event for the actor named in the server update.
@@ -96,7 +101,7 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
 
   return (
     <div className="relative min-h-0 flex-1 bg-[#f9f8fd]">
-      <div tabIndex={0} aria-label="Room messages" ref={viewportRef} onScroll={scroll} className="h-full overflow-y-auto overscroll-contain [overflow-anchor:none] focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-primary/70">
+      <div tabIndex={0} aria-label={label} ref={viewportRef} onScroll={scroll} className="h-full overflow-y-auto overscroll-contain [overflow-anchor:none] focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-primary/70">
         <div className="mx-auto flex min-h-full max-w-3xl flex-col px-3 py-3 sm:px-5 sm:py-4">
           {connected && (loading || error || (hasOlder && ready)) && (
             <div className="mb-3 flex shrink-0 flex-col items-center gap-1 text-sm">
@@ -121,7 +126,7 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
                 <path d="M32 44h31M32 53h20" stroke="#3B2FC9" strokeWidth="2.5" strokeLinecap="round"/>
                 <path d="m81 8 2.5 6.5L90 17l-6.5 2.5L81 26l-2.5-6.5L72 17l6.5-2.5L81 8Z" fill="#F5A524"/>
               </svg>
-              <h2 className="text-lg font-semibold text-foreground">Be the first to ask a doubt</h2>
+              <h2 className="text-lg font-semibold text-foreground">{emptyTitle}</h2>
             </div>
           )}
           <ol className="mt-auto flex flex-col" aria-label="Conversation">
@@ -134,6 +139,7 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
                   {nextDay && messageDate(message.sentTime) && <li className="my-5 flex items-center gap-3 text-xs font-medium text-muted-foreground before:h-px before:flex-1 before:bg-[#e9e7f4] after:h-px after:flex-1 after:bg-[#e9e7f4]">{messageDate(message.sentTime)}</li>}
                   <li data-message-id={message.messageId} tabIndex={-1} className={grouped ? "mt-0.5" : "mt-3 first:mt-0"}>
                     <MessageBubble message={message} roomId={roomId} quoteTarget={quoteTarget} reply={replies.get(message.messageId)} own={message.senderUserId === userId} grouped={grouped}
+                      receipt={message.senderUserId === userId ? receiptFor?.(message) : undefined}
                       retry={connected && message.messageId.startsWith("local:") ? () => onRetry(message.messageId) : undefined} />
                   </li>
                 </Fragment>

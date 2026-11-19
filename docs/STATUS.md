@@ -1,7 +1,7 @@
 # STATUS
 
 Last updated: 19 Nov 2026 by Codex
-Current phase: 5, Doubt cards and AI TA
+Current phase: 6, Mentor DMs
 Live URL: https://doubtroom-ochre.vercel.app
 Latest implementation tag: phase-5
 
@@ -23,8 +23,11 @@ Latest implementation tag: phase-5
 - Two distinct Nexconn test users received text and photo answers and live status updates with local Supabase auth/storage fixtures, real Postgres quota/answer functions, and mocked LLMs. Text reached both in 3.16 s, the textbook-photo answer in 3.43 s, and the @TA socket reply in 3.37 s after a mocked Gemini rejection. The daily quota at two, report form, 360 px layout, and answer quote navigation passed.
 - [Phase 5 quality worksheet](PHASE-5-QA.md) contains ten exam-style doubts and a licensed textbook image. Prompt tests confirm that injected instructions are kept inside the student-data block.
 
+- Phase 6 adds `/api/mentors` with cached server presence, the "Ask a senior" sheet on answers and subject room headers, 1:1 DMs with a doubt-quoting prefill, typing indicators, read ticks, header presence with a polling fallback, a home Direct messages list and the mentor tab placeholder. Typecheck, lint, 39 unit tests and the production build passed. A live `getUserConnectionStatus` call returned offline for the TA bot as expected.
+
 ## In progress
-- Supabase reports Google OAuth disabled. Configure the Google provider and callback URLs before the production two-account phone and laptop check. The Vercel Production environment now has the matching public Supabase URL.
+- Phase 6 two-account checks have not been run: the mentor list dot, the quoted prefill, live typing, indigo ticks and the dot clearing within a minute. Client `subscribeEvent` and receipt behavior on this Nexconn plan are unverified (D-008 fallback in place).
+- Production sign-in now reaches the Google account chooser. Mentor onboarding is pending selection of the second account and configuration of `MENTOR_INVITE_CODE` in Vercel Production.
 - The live Supabase project has the Phase 3 schema and zero course rows. Seed the catalog with `pnpm seed` once the local Supabase service credential is configured. Live Google sign-in and production room testing remain open.
 - Vercel Production and Preview lacked Gemini and Groq credentials and model IDs at the Phase 5 check. Live model timings, the Preview bad-key drill, injection behavior against a real model, ten answer-quality scores and the physical phone recording remain pending.
 - The seed uses the four requested Anna University R2021 core courses. RMKEC's 2026 third-year timetable names R2024. See [catalog sources](../data/catalog-sources.md) before using the catalog for the live cohort.
@@ -49,6 +52,7 @@ Latest implementation tag: phase-5
 - Nexconn allowed two simultaneous `dev_bob` sessions during the duplicate-login test. Both received the same live message, so the `31010` kicked-session path remains unverified.
 
 - Live Phase 5 group metadata writes succeeded with the asker ID and reached the other user. The asker uses the matching bot answer to update its card when Nexconn omits the update event.
+- The DoubtRoom Chat Free console showed no switch for online-status subscription or read receipts. Friends exposes a separate presence auto-messaging setting. SDK behavior for Phase 6 remains unverified.
 
 ## Traction snapshot
 - Users: 0 | Active 24h: 0 | Doubts: 0 | AI answers: 0 | Verified: 0

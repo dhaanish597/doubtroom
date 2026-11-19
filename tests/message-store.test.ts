@@ -44,3 +44,23 @@ describe("Nexconn message store", () => {
     expect(Object.fromEntries(useMessages.getState().byChannel[key][0].metadata)).toEqual({ ver: "1", up: "3" });
   });
 });
+
+describe("Nexconn message delivery state", () => {
+  beforeEach(() => useMessages.getState().reset());
+
+  it("never moves a message back from read to sent when an older snapshot arrives", () => {
+    const store = useMessages.getState();
+    store.mergeMessages([{ ...message("dm", 10), sentStatus: 50 }]);
+    store.mergeMessages([{ ...message("dm", 10), sentStatus: 30 }]);
+
+    expect(useMessages.getState().byChannel["3:devroom"][0].sentStatus).toBe(50);
+  });
+
+  it("remembers that a read receipt was sent across refetches", () => {
+    const store = useMessages.getState();
+    store.mergeMessages([{ ...message("dm", 10), sentReceipt: true }]);
+    store.mergeMessages([message("dm", 10)]);
+
+    expect(useMessages.getState().byChannel["3:devroom"][0].sentReceipt).toBe(true);
+  });
+});

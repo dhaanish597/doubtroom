@@ -66,3 +66,15 @@ Phase 5 extends the existing Web Chat SDK and server SDK integration (Layer 3, D
 The upload request includes the room ID and doubt ID to authorize and construct the signed object path. The TA and doubt card accept only URLs that match that project's room and doubt path. Browser support for HEIC previews varies, so the photo dialog links to the original file if the preview fails.
 
 Postgres reserves each request once and serializes quota checks across rooms, counting accepted requests by India Standard Time day. Photo requests try Gemini first and text requests honor `LLM_PRIMARY`. Groq may answer the accompanying text with a notice about the missing photo. Each attempt has a 20-second cap within a shared 24-second provider budget. Next.js `after()` runs delivery after HTTP 202 with a 45-second function ceiling for provider and Nexconn I/O. The seven-day cache is scoped by course, language and unit, skips photos, and avoids refreshing the age of unverified cached answers. Failed drafts use the Phase 5 `failed` card status. Report records answer feedback. Senior messaging and upvotes remain Phase 6 and 7 actions.
+
+## D-008 Phase 6 mentor DMs, presence and receipts
+
+Date: 19 Nov 2026 | Phase: 6
+
+Phase 6 keeps the Web Chat SDK with custom UI (D-001) and uses `DirectChannel`. All names were checked in the installed `@nexconn/chat` 26.2.1 types: `sendTypingStatus`, `ChannelHandler.onTypingStatusChanged`, `sendReadReceiptResponse`, `getMessageReadReceiptInfo`, `MessageHandler.onMessageReceiptResponse`, `NCEngine.userModule.subscribeEvent`, `getSubscribeUsersOnlineStatus` and `UserHandler.onSubscriptionChanged`. `SubscriptionChangedEvent` carries an event value whose online code is undocumented. On every change the header asks `getSubscribeUsersOnlineStatus`, which returns a boolean `isOnline`.
+
+Server SDK v0.1.2 `getUserConnectionStatus` checks one user per call (status `"1"` online, rate limit 100 per second). `/api/mentors` therefore looks users up 10 at a time and caches each result for 30 seconds per server instance. A failed lookup reports `online: null` and is not cached. `/api/mentors` also accepts `?ids=` (up to 20) for the DM header's 60-second polling fallback, which runs whenever `subscribeEvent` is refused. Try actors get an empty list and cannot open DMs until the Phase 9 demo mentor.
+
+Read ticks: one tick for sent, two grey ticks once `sentStatus` reports received, and two indigo ticks after a receipt event, a read-info lookup or `sentStatus` READ. The message store never moves delivery status backward. Received messages are acknowledged after they are at least 60% visible in a foreground tab, batched with a 500 ms debounce.
+
+`/api/rooms/[id]/doubts` is still reserved for Phase 7, so the DM prefill reads the doubt from the message store or `BaseChannel.getMessagesByIds`. The page uses the room title only when the actor is a member. Group and direct chats share a new `useChannelHistory` hook that contains the D-006 history cursor workaround unchanged. Events accept `dm_started` and `dm_message_sent` with a `peerId`, which must be an existing profile other than the sender.

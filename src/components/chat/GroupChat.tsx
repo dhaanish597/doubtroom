@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { GroupChannel, MessagesQuery } from "@nexconn/chat";
+import type { GroupChannel } from "@nexconn/chat";
 import { nanoid } from "nanoid";
 
 import { trackRoomEvent } from "@/lib/analytics";
@@ -13,7 +13,8 @@ import { channelKeyFor, useMessages, type ChatMessage } from "@/lib/stores/messa
 import { loadProfiles } from "@/lib/stores/profiles";
 import { markRoomPreviewRead, recordRoomMessage, useRooms } from "@/lib/stores/rooms";
 import { Composer, type SendDraft } from "./Composer";
-import { captureMessageAnchor, MessageList, type ScrollAnchor } from "./MessageList";
+import { MessageList } from "./MessageList";
+import { useChannelHistory } from "./useChannelHistory";
 
 const EMPTY_MESSAGES: ChatMessage[] = [];
 type PendingMessage = { message: ChatMessage; draft: SendDraft; owner: string; imageUrl?: string };
@@ -43,7 +44,6 @@ async function requestTa(body: object) {
   const response = await request().catch(request);
   if (!response.ok) throw new Error("TA request failed");
 }
-type History = { createQuery: (startTime?: number) => MessagesQuery; busy: boolean; more: boolean; oldest?: number };
 
 export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false }: {
   roomId: string; title: string; initialUnits?: string[]; dev?: boolean;
@@ -55,58 +55,13 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
   const key = channelKeyFor({ channelType: 3, channelId: roomId });
   const received = useMessages((state) => state.byChannel[key] ?? EMPTY_MESSAGES);
   const [pending, setPending] = useState<PendingMessage[]>([]);
-  const [ready, setReady] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [historyError, setHistoryError] = useState("");
-  const [hasOlder, setHasOlder] = useState(false);
-  const [historyFloor, setHistoryFloor] = useState<number | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   const viewport = useRef<HTMLDivElement | null>(null);
-  const anchor = useRef<ScrollAnchor | null>(null);
   const channel = useRef<GroupChannel | null>(null);
-  const history = useRef<History | null>(null);
   const sending = useRef(new Set<string>());
   const uploading = useRef(false);
   const readRunning = useRef(false);
   const shouldClear = useRef(false);
-  const messages = useMemo(() => {
-    // The SDK may deliver an offline backlog before the first history page arrives.
-    const visible = historyFloor === null ? received.slice(-30) : received.filter((message) => message.sentTime >= historyFloor);
-    return [...visible, ...pending.filter((item) => item.owner === userId).map((item) => item.message)]
-      .sort((a, b) => a.sentTime - b.sentTime);
-  }, [received, pending, userId, historyFloor]);
-
-  const load = useCallback(async (cursor: History, older: boolean) => {
-    if (cursor.busy || !cursor.more) return;
-    cursor.busy = true;
-    setLoading(true);
-    setHistoryError("");
-    try {
-      // v26.2.1 can return oldest-first records for a descending request. Base the
-      // next query on the oldest timestamp rather than the SDK's last returned row.
-      const page = await cursor.createQuery(cursor.oldest).loadNextPage();
-      if (history.current !== cursor) return;
-      if (!page.isOk) throw new Error("History page failed");
-      const list = page.data?.data ?? [];
-      const earliest = Math.min(...list.map(({ sentTime }) => sentTime));
-      cursor.more = Number.isFinite(earliest) && (cursor.oldest === undefined || earliest < cursor.oldest);
-      if (cursor.more) cursor.oldest = earliest;
-      if (older && list.length) anchor.current = captureMessageAnchor(viewport.current);
-      if (Number.isFinite(earliest)) {
-        setHistoryFloor((previous) => Math.min(previous ?? Infinity, earliest));
-      } else {
-        setHistoryFloor((previous) => previous ?? -Infinity);
-      }
-      useMessages.getState().mergeMessages(list);
-      setHasOlder(cursor.more);
-      setReady(true);
-    } catch {
-      if (history.current === cursor) setHistoryError("Could not load messages.");
-    } finally {
-      cursor.busy = false;
-      if (history.current === cursor) setLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
     if (dev) return;
@@ -140,42 +95,30 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
     }
   }, [key, roomId]);
 
-  const startHistory = useCallback(async (active: () => boolean) => {
-    try {
-      const { BaseChannel, GroupChannel } = await initNexconn();
-      if (!active()) return;
-      const room = new GroupChannel(roomId);
-      channel.current = room;
-      void clearRead();
-      const cursor: History = {
-        createQuery: (startTime) => BaseChannel.createMessagesQuery({
-          channelIdentifier: room.identifier, pageSize: 30, isAscending: false, startTime,
-        }),
-        busy: false, more: true,
-      };
-      history.current = cursor;
-      await load(cursor, false);
-    } catch {
-      if (active()) setHistoryError("Could not open chat.");
-    }
-  }, [roomId, load, clearRead]);
+  const openChannel = useCallback((sdk: Awaited<ReturnType<typeof initNexconn>>) => {
+    const room = new sdk.GroupChannel(roomId);
+    channel.current = room;
+    void clearRead();
+    return room.identifier;
+  }, [roomId, clearRead]);
+  const closeChannel = useCallback(() => { channel.current = null; }, []);
+  const afterStart = useCallback(() => void clearRead(), [clearRead]);
+  const { ready, loading, error: historyError, hasOlder, historyFloor, loadMore, anchor } = useChannelHistory({
+    connected, open: openChannel, close: closeChannel, onStarted: afterStart, viewport,
+  });
+  const messages = useMemo(() => {
+    // The SDK may deliver an offline backlog before the first history page arrives.
+    const visible = historyFloor === null ? received.slice(-30) : received.filter((message) => message.sentTime >= historyFloor);
+    return [...visible, ...pending.filter((item) => item.owner === userId).map((item) => item.message)]
+      .sort((a, b) => a.sentTime - b.sentTime);
+  }, [received, pending, userId, historyFloor]);
 
   useEffect(() => {
     if (!connected) return;
-    let active = true;
-    const initialize = setTimeout(() => {
-      void startHistory(() => active).then(() => { if (active) void clearRead(); });
-    }, 0);
     const onVisible = () => void clearRead();
     document.addEventListener("visibilitychange", onVisible);
-    return () => {
-      active = false;
-      clearTimeout(initialize);
-      channel.current = null;
-      history.current = null;
-      document.removeEventListener("visibilitychange", onVisible);
-    };
-  }, [connected, startHistory, clearRead]);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [connected, clearRead]);
 
   const newestId = received.at(-1)?.messageId;
   useEffect(() => { if (connected && newestId) void clearRead(); }, [connected, newestId, clearRead]);
@@ -269,11 +212,7 @@ export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false 
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={`Chat in ${title}`}>
       <MessageList roomId={roomId} messages={messages} userId={userId} ready={ready} connected={connected} loading={loading} error={historyError} hasOlder={hasOlder}
-        viewportRef={viewport} anchorRef={anchor} onLoad={() => {
-          const cursor = history.current;
-          if (cursor) void load(cursor, ready);
-          else void startHistory(() => useConnection.getState().userId === userId);
-        }} onRetry={(id) => {
+        viewportRef={viewport} anchorRef={anchor} onLoad={() => loadMore(() => useConnection.getState().userId === userId)} onRetry={(id) => {
           const item = pending.find((entry) => entry.message.messageId === id);
           if (item) void send(item);
         }} />

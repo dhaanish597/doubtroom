@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, BellOff, Ellipsis, UsersRound } from "lucide-react";
+import { ArrowLeft, BellOff, Ellipsis, GraduationCap, UsersRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { AskSeniorSheet } from "@/components/mentor/MentorList";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Room } from "@/lib/rooms/types";
 
@@ -23,6 +24,13 @@ export function RoomHeader({ room, tab }: { room: Pick<Room, "id" | "title" | "c
               <span className="flex items-center gap-1"><UsersRound aria-hidden="true" className="size-3.5" />{room.memberCount} {room.memberCount === 1 ? "member" : "members"}</span>
             </div>
           </div>
+          {room.courseCode && (
+            <AskSeniorSheet course={room.courseCode} roomId={room.id}>
+              <Button type="button" variant="ghost" className="h-11 shrink-0 rounded-full px-3 text-primary">
+                <GraduationCap className="size-5" aria-hidden="true" /><span className="sr-only sm:not-sr-only">Ask a senior</span>
+              </Button>
+            </AskSeniorSheet>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button type="button" variant="ghost" aria-label="Room options" className="size-11 shrink-0 rounded-full text-primary"><Ellipsis className="size-5" aria-hidden="true" /></Button>

@@ -16,6 +16,7 @@ import type { ChatMessage } from "@/lib/stores/messages";
 import { useProfiles } from "@/lib/stores/profiles";
 import { AnswerCard } from "./AnswerCard";
 import { DoubtCard } from "./DoubtCard";
+import { ReadTicks, type TickState } from "./ReadTicks";
 
 function RichText({ text, mentions }: { text: string; mentions: string[] }) {
   const rawLink = "https?://[^\\s<>]+";
@@ -66,8 +67,9 @@ function fileSize(bytes: number) {
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
-export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarget, reply }: {
+export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarget, reply, receipt }: {
   message: ChatMessage; roomId: string; own: boolean; grouped: boolean; retry?: () => void;
+  receipt?: TickState;
   reply?: { doubtId: string; failed: boolean };
   quoteTarget?: (messageId: string) => (() => void) | undefined;
 }) {
@@ -119,7 +121,8 @@ export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarge
         </div>
         <div className={`flex min-h-5 flex-wrap items-center gap-1.5 px-1 text-[0.6875rem] text-muted-foreground ${own ? "justify-end" : ""}`}>
           <span>{time}</span>
-          {own && !failed && (sending ? <Clock3 aria-label="Sending" className="size-3" /> : <Check aria-label="Sent" className="size-3 text-primary" />)}
+          {own && !failed && (sending ? <Clock3 aria-label="Sending" className="size-3" />
+            : receipt ? <ReadTicks state={receipt} /> : <Check aria-label="Sent" className="size-3 text-primary" />)}
           {failed && <span className="text-destructive">Failed</span>}
           {failed && retry && <Button variant="ghost" type="button" className="h-11 text-destructive" onClick={retry}><RotateCcw aria-hidden="true" />Retry</Button>}
         </div>

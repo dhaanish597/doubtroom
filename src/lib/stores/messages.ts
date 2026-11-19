@@ -5,13 +5,18 @@ type MessageChannel = Pick<ChannelIdentifier, "channelType" | "channelId">;
 type SdkMessage = Message<object>;
 export type ChatMessage = Pick<SdkMessage,
   "messageId" | "messageType" | "senderUserId" | "sentTime" | "metadata"
-> & { content: unknown; sentStatus?: SdkMessage["sentStatus"] };
+> & { content: unknown; sentStatus?: SdkMessage["sentStatus"]; sentReceipt?: boolean };
 
 export function channelKeyFor({ channelType, channelId }: MessageChannel) {
   return `${channelType}:${channelId}`;
 }
 
 type IncomingMessage = ChatMessage & { channelIdentifier: MessageChannel };
+
+function laterStatus(next?: SdkMessage["sentStatus"], previous?: SdkMessage["sentStatus"]) {
+  if (next === undefined || previous === undefined) return next ?? previous;
+  return next > previous ? next : previous;
+}
 
 type MetadataPatches = Record<string, Record<string, string>>;
 
@@ -54,7 +59,9 @@ export const useMessages = create<MessagesState>((set) => ({
           senderUserId: message.senderUserId,
           sentTime: message.sentTime,
           content: message.content,
-          sentStatus: message.sentStatus ?? existing?.sentStatus,
+          // Delivery only moves forward (sent, received, read), so a stale snapshot cannot undo it.
+          sentStatus: laterStatus(message.sentStatus, existing?.sentStatus),
+          sentReceipt: Boolean(message.sentReceipt || existing?.sentReceipt) || undefined,
           metadata,
         });
         delete pendingMetadata[key][message.messageId];

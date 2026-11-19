@@ -92,6 +92,11 @@ export async function issueToken(userId: string, name: string, avatarUrl?: strin
   return token;
 }
 
+export async function isUserOnline(userId: string): Promise<boolean> {
+  const data = await request("check the user's connection", () => users.getUserConnectionStatus({ userId }));
+  return data.result?.status === "1";
+}
+
 function hasCode(error: unknown, code: number): boolean {
   return error instanceof NexconnError && error.errorCode === code;
 }
