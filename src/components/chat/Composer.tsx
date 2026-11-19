@@ -17,7 +17,7 @@ export type SendDraft =
   /** A senior's reply to the doubt in `reply`. */
   | { kind: "answer"; text: string };
 
-export function Composer({ roomId, units, allowDoubts, connected, progress, onSend, allowMentions = true, prefill = "", prefillMode, prefillUnit, onInput, reply }: {
+export function Composer({ roomId, units, allowDoubts, connected, progress, onSend, allowMentions = true, allowPhotos = true, prefill = "", prefillMode, prefillUnit, onInput, reply }: {
   roomId: string;
   units: string[];
   allowDoubts: boolean;
@@ -25,6 +25,8 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   progress: number | null;
   onSend: (draft: SendDraft) => void;
   allowMentions?: boolean;
+  /** Text-only rooms (Exam Eve) hide the photo button. */
+  allowPhotos?: boolean;
   /** Fills an empty composer once, for example with a quoted doubt. */
   prefill?: string;
   /** With a mode, the prefill replaces the draft and switches mode (the demo tour's example doubt). */
@@ -199,7 +201,7 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
             setError("");
             setFile(selected);
           }} />
-          <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Attach a photo" disabled={!connected || progress !== null || answering} onClick={() => attach.current?.click()}><ImagePlus aria-hidden="true" /></Button>
+          {allowPhotos && <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Attach a photo" disabled={!connected || progress !== null || answering} onClick={() => attach.current?.click()}><ImagePlus aria-hidden="true" /></Button>}
           {mode === "chat" && allowMentions && !answering && <Button type="button" variant="ghost" className="size-11 shrink-0 text-primary" aria-label="Mention someone" disabled={!connected} onClick={insertMention}><AtSign aria-hidden="true" /></Button>}
           <textarea ref={input} rows={1} aria-label={answering ? "Your answer" : mode === "doubt" ? "What’s your doubt?" : "Message"}
             placeholder={answering ? "Write a better answer" : mode === "doubt" ? "What’s your doubt?" : "Write a message"} value={draft} maxLength={2000} disabled={!connected}

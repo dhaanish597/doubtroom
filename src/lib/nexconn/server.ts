@@ -214,3 +214,34 @@ export async function listGroupMemberIds(channelId: string) {
 
   return [...ids];
 }
+
+/** Open channel destroy types from the server SDK docs: 0 after inactivity, 1 at a fixed time. */
+const OPEN_CHANNEL_FIXED_DESTROY = 1;
+
+export async function createOpenChannel(channelId: string, ttlMinutes: number): Promise<void> {
+  await request("create the open channel", () => openChannels.createOpenChannel({
+    channelId, destroyType: OPEN_CHANNEL_FIXED_DESTROY, ttlMinutes,
+  }));
+}
+
+export async function openChannelParticipantCount(channelId: string): Promise<number | null> {
+  const { result } = await request("look up the open channel", () => openChannels.getOpenChannel({ channelId }));
+  return typeof result?.participantCount === "number" ? result.participantCount : null;
+}
+
+export async function sendOpenCustom(
+  fromUserId: string,
+  channelId: string,
+  type: CustomType,
+  payload: object,
+  opts: { shouldPersist?: number; isEchoToSender?: number } = {},
+) {
+  const content = JSON.stringify(payload);
+  if (Buffer.byteLength(content, "utf8") > 128 * 1024) {
+    throw new RangeError("Nexconn message content exceeds 128 KB");
+  }
+  const { result } = await request("send the open channel message", () => messages.sendOpenChannelMessage({
+    ...opts, fromUserId, toChannelIds: [channelId], messageType: type, content,
+  }));
+  return result;
+}
