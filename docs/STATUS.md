@@ -1,9 +1,9 @@
 # STATUS
 
-Last updated: 19 Nov 2026 by Codex
-Current phase: 6, Mentor DMs
+Last updated: 19 Nov 2026 by Claude Code
+Current phase: 11A/11B in progress (7 and 9 merged)
 Live URL: https://doubtroom-ochre.vercel.app
-Latest implementation tag: phase-5
+Latest implementation tag: phase-9
 
 ## Done
 - Phase 1 scaffold, branded landing page, shadcn components, environment validation and example catalog.
@@ -24,6 +24,10 @@ Latest implementation tag: phase-5
 - [Phase 5 quality worksheet](PHASE-5-QA.md) contains ten exam-style doubts and a licensed textbook image. Prompt tests confirm that injected instructions are kept inside the student-data block.
 
 - Phase 6 adds `/api/mentors` with cached server presence, the "Ask a senior" sheet on answers and subject room headers, 1:1 DMs with a doubt-quoting prefill, typing indicators, read ticks, header presence with a polling fallback, a home Direct messages list and the mentor tab placeholder. Typecheck, lint, 39 unit tests and the production build passed. A live `getUserConnectionStatus` call returned offline for the TA bot as expected.
+
+- Phase 7 adds upvote and verify APIs with Nexconn metadata, mentor "Add a better answer" reference replies, a strong Verified state, the room doubt board with jump-to-message, and the mentor inbox with a nav badge. Migration `0004_phase7.sql` is applied to the live database; RPC grants were checked (anon denied, service role allowed).
+- Phase 9 adds `/try` judge mode with a dr_try cookie, sandbox rules, an auto-ticking five-step tour and demo mentor replies, the PWA manifest, icons and an app-shell service worker, PostHog (no-op without a key), `/api/impact` and `/impact`, and the real landing page. `pnpm seed` posted the 7-message demo script to `demo_cn` on the live app.
+- Merged main: typecheck, lint, 89 unit tests and the production build pass.
 
 ## In progress
 - Phase 6 two-account checks have not been run: the mentor list dot, the quoted prefill, live typing, indigo ticks and the dot clearing within a minute. Client `subscribeEvent` and receipt behavior on this Nexconn plan are unverified (D-008 fallback in place).
