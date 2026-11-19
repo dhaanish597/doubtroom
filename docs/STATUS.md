@@ -16,9 +16,10 @@ Last good tag: phase-4
 - Phase 3 implements Google OAuth, protected SSR routes, profile resolution, chat sessions, onboarding, room provisioning, and the room list and chat shell. Typecheck, lint, 24 unit tests, and the production build passed. Local production HTTP checks used Supabase fixtures. PostgreSQL checks covered cache and refresh behavior, duplicate event prevention, onboarding finalization, and RPC grants.
 
 - Phase 4 adds the room header, paginated chat timeline, message rendering, retry, photo upload, mentions, live room previews and unread counts, and room analytics. Typecheck, lint, build, and 28 unit tests passed.
-- Two distinct Nexconn users in an isolated test group passed the browser checks for history, new-message scrolling, desktop and mobile-width send, member mentions, unread clearing, photo viewing, invalid custom content, and analytics. Supabase used local fixtures. A physical phone and live Google account remain unverified.
+- Two distinct Nexconn users in an isolated test group passed the browser checks for history, new-message scrolling, desktop and mobile-width send, member mentions, unread clearing, photo viewing, invalid custom content, and analytics. Supabase used local fixtures. A forced Nexconn socket disconnect recovered an offline message exactly once, with unique IDs throughout the timeline. A physical phone and live Google account remain unverified.
 
 ## In progress
+- Supabase reports Google OAuth disabled. Configure the Google provider and callback URLs before the production two-account phone and laptop check. The Vercel Production environment now has the matching public Supabase URL.
 - Apply `supabase/migrations/0002_phase3.sql` after the initial schema, configure the Supabase credentials and invite codes in `.env.local`, then run `pnpm seed`. Live Google sign-in and Nexconn room provisioning and messaging still need the two-account acceptance check.
 - The seed uses the four requested Anna University R2021 core courses. RMKEC's 2026 third-year timetable names R2024. See [catalog sources](../data/catalog-sources.md) before using the catalog for the live cohort.
 
