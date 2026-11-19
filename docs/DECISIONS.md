@@ -177,3 +177,9 @@ The /admin page renders the Phase 11B `EvePanel` next to the Phase 11A panels. T
 Course notes use unpdf's bundled PDF.js text extractor on the project's Node 24 runtime. It retains physical PDF page numbers. Scanned documents need a selectable text layer. The CLI and admin endpoint share the same ingestion code. The admin form uploads to a private Supabase bucket using a scoped signed URL, then indexes and removes the staged file. This accommodates a 20 MB PDF despite Vercel's smaller function request-body limit. Direct multipart requests are also supported.
 
 Imports replace a course/title atomically after all embeddings succeed. Cached answers carry the sources that were cited when written. The demo room uses the original DoubtRoom TCP revision sheet, available at /notes/tcp-revision.pdf. Production campus-room notes stay out of demo prompts.
+
+## D-016 Groq only, no Gemini
+
+Date: 20 Nov 2026 | Phase: launch prep
+
+Plan said: Gemini primary (with vision and embeddings), Groq fallback. We did: Groq only, `LLM_PRIMARY=groq`, `GROQ_MODEL=openai/gpt-oss-120b`, no Gemini key in any environment. Why: owner decision. Impact: text doubts, @TA, Eve answers and recap summaries all run on Groq. The Gemini paths stay in code and are skipped when `GEMINI_API_KEY` is empty. Notes grounding (Phase 8) needs Gemini embeddings, so answers carry no notes citations and the admin notes upload reports that embeddings are not configured. A photo doubt with text is answered from its text with the existing notice that the photo was not read; a photo-only doubt gets the failed card. `src/lib/env.ts` marks the Gemini variables optional.

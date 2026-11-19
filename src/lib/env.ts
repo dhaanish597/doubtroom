@@ -12,9 +12,10 @@ const adminEmails = required.transform((value) => value.split(",").map((email) =
 const serverEnvSchema = z.object({
   ...nexconnEnvSchema.shape,
   SUPABASE_SERVICE_ROLE_KEY: required,
-  GEMINI_API_KEY: required,
-  GEMINI_MODEL: required,
-  GEMINI_EMBED_MODEL: required,
+  // Gemini is optional: production runs Groq only (D-016). Without it, notes grounding and photo-only doubts are off.
+  GEMINI_API_KEY: required.optional(),
+  GEMINI_MODEL: required.optional(),
+  GEMINI_EMBED_MODEL: required.optional(),
   GROQ_API_KEY: required,
   GROQ_MODEL: required,
   LLM_PRIMARY: z.enum(["gemini", "groq"]),
