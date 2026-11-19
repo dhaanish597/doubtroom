@@ -56,3 +56,13 @@ The installed Web Chat SDK exposes `Helper.createSendImageMessageParams`, which 
 Live Nexconn history returned records oldest-first even with `isAscending: false`. The installed query advances using the last returned record, which caused overlapping pages. The room uses `BaseChannel.createMessagesQuery` with the oldest received timestamp as `startTime` for the next `loadNextPage` call. It merges messages by ID and keeps the first page at 30 while the SDK delivers its offline backlog.
 
 The room list keeps the timestamp of the latest confirmed read so temporarily stale channel snapshots cannot restore the same unread badge. Events accept only the room ID and an allowlisted event name.
+
+## D-007 Phase 5 TA delivery, uploads and quotas
+
+Date: 19 Nov 2026 | Phase: 5
+
+Phase 5 extends the existing Web Chat SDK and server SDK integration (Layer 3, D-001). The installed server SDK declares `shouldPersist` as numeric, so bot answers use `1`. An isolated Nexconn group confirmed that writing doubt metadata as the asker succeeds and updates the second user live. The asker missed its own update, so the timeline also derives status from a bot answer when both the doubt ID and the quoted message ID match. Nexconn server history is disabled on this app (403, code 1009). The endpoint uses authenticated room membership and rate limits as in the plan. The service cannot independently verify authorship of a supplied chat message ID. Phase 5 metadata includes the doubt ID so other cards ignore mismatched updates.
+
+The upload request includes the room ID and doubt ID to authorize and construct the signed object path. The TA and doubt card accept only URLs that match that project's room and doubt path. Browser support for HEIC previews varies, so the photo dialog links to the original file if the preview fails.
+
+Postgres reserves each request once and serializes quota checks across rooms, counting accepted requests by India Standard Time day. Photo requests try Gemini first and text requests honor `LLM_PRIMARY`. Groq may answer the accompanying text with a notice about the missing photo. Each attempt has a 20-second cap within a shared 24-second provider budget. Next.js `after()` runs delivery after HTTP 202 with a 45-second function ceiling for provider and Nexconn I/O. The seven-day cache is scoped by course, language and unit, skips photos, and avoids refreshing the age of unverified cached answers. Failed drafts use the Phase 5 `failed` card status. Report records answer feedback. Senior messaging and upvotes remain Phase 6 and 7 actions.

@@ -32,6 +32,7 @@ export const answerSchema = z.object({
   model: z.string(),
   failed: z.boolean().optional(),
   quotedText: z.string(),
+  cached: z.boolean().optional(),
 });
 
 export const announceSchema = z.object({

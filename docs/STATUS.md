@@ -1,9 +1,9 @@
 # STATUS
 
 Last updated: 19 Nov 2026 by Codex
-Current phase: 4, Room experience
+Current phase: 5, Doubt cards and AI TA
 Live URL: https://doubtroom-ochre.vercel.app
-Last good tag: phase-4
+Latest implementation tag: phase-5
 
 ## Done
 - Phase 1 scaffold, branded landing page, shadcn components, environment validation and example catalog.
@@ -18,9 +18,15 @@ Last good tag: phase-4
 - Phase 4 adds the room header, paginated chat timeline, message rendering, retry, photo upload, mentions, live room previews and unread counts, and room analytics. Typecheck, lint, build, and 28 unit tests passed.
 - Two distinct Nexconn users in an isolated test group passed the browser checks for history, new-message scrolling, desktop and mobile-width send, member mentions, unread clearing, photo viewing, invalid custom content, and analytics. Supabase used local fixtures. A forced Nexconn socket disconnect recovered an offline message exactly once, with unique IDs throughout the timeline. A physical phone and live Google account remain unverified.
 
+- Phase 5 adds doubt composition with unit and photo, signed uploads, live cards, @TA replies, Gemini/Groq fallback, a seven-day answer cache, request quotas, and reporting.
+- Created the production Supabase `doubt-images` bucket and verified public read, 5 MB, JPEG/PNG/WebP/HEIC and zero bucket policies. Applied `0003_phase5.sql` and verified the quota RPC is executable by the service role and denied to anon.
+- Two distinct Nexconn test users received text and photo answers and live status updates with local Supabase auth/storage fixtures, real Postgres quota/answer functions, and mocked LLMs. Text reached both in 3.16 s, the textbook-photo answer in 3.43 s, and the @TA socket reply in 3.37 s after a mocked Gemini rejection. The daily quota at two, report form, 360 px layout, and answer quote navigation passed.
+- [Phase 5 quality worksheet](PHASE-5-QA.md) contains ten exam-style doubts and a licensed textbook image. Prompt tests confirm that injected instructions are kept inside the student-data block.
+
 ## In progress
 - Supabase reports Google OAuth disabled. Configure the Google provider and callback URLs before the production two-account phone and laptop check. The Vercel Production environment now has the matching public Supabase URL.
-- Apply `supabase/migrations/0002_phase3.sql` after the initial schema, configure the Supabase credentials and invite codes in `.env.local`, then run `pnpm seed`. Live Google sign-in and Nexconn room provisioning and messaging still need the two-account acceptance check.
+- The live Supabase project has the Phase 3 schema and zero course rows. Seed the catalog with `pnpm seed` once the local Supabase service credential is configured. Live Google sign-in and production room testing remain open.
+- Vercel Production and Preview lacked Gemini and Groq credentials and model IDs at the Phase 5 check. Live model timings, the Preview bad-key drill, injection behavior against a real model, ten answer-quality scores and the physical phone recording remain pending.
 - The seed uses the four requested Anna University R2021 core courses. RMKEC's 2026 third-year timetable names R2024. See [catalog sources](../data/catalog-sources.md) before using the catalog for the live cohort.
 
 ## Known bugs (P0 blocks demo, P1 visible, P2 cosmetic)
@@ -32,6 +38,7 @@ Last good tag: phase-4
 - D-004 records HTTPS URL handling, endpoint success codes, and the reserved dev identity namespace.
 - D-005 records the Phase 3 database migration and development-only chat tooling.
 - D-006 records the verified Phase 4 media helper and the SDK history cursor workaround.
+- D-007 records Phase 5 upload authorization, provider deadlines and live metadata findings.
 
 ## Env vars added since plan
 - None. All 26 application variables are listed in `.env.example`.
@@ -40,6 +47,8 @@ Last good tag: phase-4
 - Nexconn engine and chat are pinned to `26.2.1`. The server SDK built successfully from tag `v0.1.2`, and `dist/index.d.ts` exists.
 - The installed types confirm the nested `data.result.accessToken` shape and the client handler, history, and send signatures. The live token endpoint returned body `code: 0` with HTTP 200. The development log redacted the token.
 - Nexconn allowed two simultaneous `dev_bob` sessions during the duplicate-login test. Both received the same live message, so the `31010` kicked-session path remains unverified.
+
+- Live Phase 5 group metadata writes succeeded with the asker ID and reached the other user. The asker uses the matching bot answer to update its card when Nexconn omits the update event.
 
 ## Traction snapshot
 - Users: 0 | Active 24h: 0 | Doubts: 0 | AI answers: 0 | Verified: 0

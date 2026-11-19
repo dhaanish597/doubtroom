@@ -4,6 +4,8 @@ import { Fragment, useLayoutEffect, useRef, type RefObject } from "react";
 import { ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BOT_IDS } from "@/lib/nexconn/identities";
+import { MSG, safeParseAnswer } from "@/lib/nexconn/messages";
 import { groupMessages, messageDate } from "@/lib/rooms/timeline";
 import type { ChatMessage } from "@/lib/stores/messages";
 import { MessageBubble } from "./MessageBubble";
@@ -20,7 +22,8 @@ export function captureMessageAnchor(viewport: HTMLDivElement | null): ScrollAnc
   return null;
 }
 
-export function MessageList({ messages, userId, ready, connected, loading, error, hasOlder, viewportRef, anchorRef, onLoad, onRetry }: {
+export function MessageList({ roomId, messages, userId, ready, connected, loading, error, hasOlder, viewportRef, anchorRef, onLoad, onRetry }: {
+  roomId: string;
   messages: ChatMessage[];
   userId: string | null;
   ready: boolean;
@@ -65,6 +68,23 @@ export function MessageList({ messages, userId, ready, connected, loading, error
       else if (changed) pill.current.hidden = false;
     }
   }, [messages, viewportRef, anchorRef, userId]);
+
+  const messageIds = new Set(messages.map(({ messageId }) => messageId));
+  // Nexconn may omit a metadata event for the actor named in the server update.
+  const replies = new Map<string, { doubtId: string; failed: boolean }>();
+  for (const message of messages) {
+    if (message.senderUserId !== BOT_IDS.TA || message.messageType !== MSG.ANSWER) continue;
+    const answer = safeParseAnswer(message.content).data;
+    if (answer?.doubtId) replies.set(answer.doubtMessageId, { doubtId: answer.doubtId, failed: Boolean(answer.failed) });
+  }
+  function quoteTarget(messageId: string) {
+    if (!messageIds.has(messageId)) return;
+    return () => {
+      const row = viewportRef.current?.querySelector<HTMLElement>(`[data-message-id="${CSS.escape(messageId)}"]`);
+      row?.scrollIntoView({ block: "center" });
+      row?.focus({ preventScroll: true });
+    };
+  }
 
   function scroll() {
     const panel = viewportRef.current;
@@ -112,8 +132,8 @@ export function MessageList({ messages, userId, ready, connected, loading, error
               return (
                 <Fragment key={message.messageId}>
                   {nextDay && messageDate(message.sentTime) && <li className="my-5 flex items-center gap-3 text-xs font-medium text-muted-foreground before:h-px before:flex-1 before:bg-[#e9e7f4] after:h-px after:flex-1 after:bg-[#e9e7f4]">{messageDate(message.sentTime)}</li>}
-                  <li data-message-id={message.messageId} className={grouped ? "mt-0.5" : "mt-3 first:mt-0"}>
-                    <MessageBubble message={message} own={message.senderUserId === userId} grouped={grouped}
+                  <li data-message-id={message.messageId} tabIndex={-1} className={grouped ? "mt-0.5" : "mt-3 first:mt-0"}>
+                    <MessageBubble message={message} roomId={roomId} quoteTarget={quoteTarget} reply={replies.get(message.messageId)} own={message.senderUserId === userId} grouped={grouped}
                       retry={connected && message.messageId.startsWith("local:") ? () => onRetry(message.messageId) : undefined} />
                   </li>
                 </Fragment>

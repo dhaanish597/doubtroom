@@ -8,7 +8,7 @@ export default async function RoomPage({ params }: { params: Promise<{ roomId: s
   return (
     <main data-room-chat className="flex min-h-0 flex-1 flex-col">
       <RoomHeader room={room} tab="chat" />
-      <GroupChat key={room.id} roomId={room.id} title={room.title} />
+      <GroupChat key={room.id} roomId={room.id} title={room.title} initialUnits={room.units} />
     </main>
   );
 }

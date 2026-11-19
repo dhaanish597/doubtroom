@@ -1,6 +1,6 @@
 "use client";
 
-export function trackRoomEvent(name: "message_sent" | "room_opened", roomId: string) {
+export function trackRoomEvent(name: "message_sent" | "room_opened" | "doubt_posted", roomId: string) {
   void fetch("/api/events", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -8,10 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { TA_AVATAR } from "@/lib/nexconn/bot-avatar";
 import { BOT_IDS } from "@/lib/nexconn/identities";
-import { MESSAGE_STATUS, mediaUrl, renderableMessage } from "@/lib/nexconn/messages";
+import { MSG, MESSAGE_STATUS, mediaUrl, renderableMessage, safeParseAnswer, safeParseDoubt } from "@/lib/nexconn/messages";
+import { publicEnv } from "@/lib/public-env";
+import { isRoomDoubtImage } from "@/lib/rooms/doubt-images";
 import { mentionPattern, messageTime } from "@/lib/rooms/timeline";
 import type { ChatMessage } from "@/lib/stores/messages";
 import { useProfiles } from "@/lib/stores/profiles";
+import { AnswerCard } from "./AnswerCard";
+import { DoubtCard } from "./DoubtCard";
 
 function RichText({ text, mentions }: { text: string; mentions: string[] }) {
   const rawLink = "https?://[^\\s<>]+";
@@ -45,7 +49,10 @@ function PhotoView({ url, thumbnail }: { url: string; thumbnail: string }) {
           <DialogTitle>Shared photo</DialogTitle>
           <DialogClose asChild><Button className="size-11 text-white hover:bg-white/10 hover:text-white" variant="ghost" aria-label="Close photo"><X aria-hidden="true" /></Button></DialogClose>
         </div>
-        {fullFailed ? <p role="status" className="self-center text-center">Could not load this photo.</p>
+        {fullFailed ? <div className="self-center text-center">
+          <p role="status">Could not preview this photo.</p>
+          <a href={url} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center underline">Open original photo</a>
+        </div>
           /* eslint-disable-next-line @next/next/no-img-element */
           : <img src={url} alt="Full-size photo shared in chat" referrerPolicy="no-referrer" onError={() => setFullFailed(true)} className="mx-auto max-h-[calc(100dvh-6rem)] min-h-0 w-full self-center object-contain" />}
       </DialogContent>
@@ -59,10 +66,22 @@ function fileSize(bytes: number) {
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
-export function MessageBubble({ message, own, grouped, retry }: { message: ChatMessage; own: boolean; grouped: boolean; retry?: () => void }) {
+export function MessageBubble({ message, roomId, own, grouped, retry, quoteTarget, reply }: {
+  message: ChatMessage; roomId: string; own: boolean; grouped: boolean; retry?: () => void;
+  reply?: { doubtId: string; failed: boolean };
+  quoteTarget?: (messageId: string) => (() => void) | undefined;
+}) {
   const profile = useProfiles((state) => state.profiles[message.senderUserId]);
   const profiles = useProfiles((state) => state.profiles);
   const content = renderableMessage(message.messageType, message.content);
+  const doubt = message.messageType === MSG.DOUBT ? safeParseDoubt(message.content).data : undefined;
+  const answer = message.messageType === MSG.ANSWER && message.senderUserId === BOT_IDS.TA ? safeParseAnswer(message.content).data : undefined;
+  const boundDoubtId = message.metadata.get("did");
+  const status = boundDoubtId && boundDoubtId !== doubt?.doubtId ? undefined : message.metadata.get("st");
+  const doubtStatus = (!status || status === "open") && reply?.doubtId === doubt?.doubtId && reply
+    ? (reply.failed ? "failed" : "ai") : status;
+  const doubtPhoto = doubt?.imageUrl && isRoomDoubtImage(publicEnv.NEXT_PUBLIC_SUPABASE_URL, roomId, doubt.doubtId, doubt.imageUrl)
+    ? doubt.imageUrl : undefined;
   const displayName = profile?.name || (message.senderUserId === BOT_IDS.TA ? "DoubtRoom TA" : "Room member");
   const avatar = mediaUrl(profile?.avatar) ?? (message.senderUserId === BOT_IDS.TA ? TA_AVATAR : undefined);
   const time = messageTime(message.sentTime);
@@ -80,7 +99,7 @@ export function MessageBubble({ message, own, grouped, retry }: { message: ChatM
         </Avatar>
       )}
       <div className={`min-w-0 max-w-[85%] sm:max-w-[76%] ${own ? "text-right" : ""}`}>
-        {!own && !grouped && <p className="mb-1 truncate px-1 text-xs font-semibold text-foreground/80">{displayName}</p>}
+        {!own && !grouped && !answer && <p className="mb-1 truncate px-1 text-xs font-semibold text-foreground/80">{displayName}</p>}
         <div className={`inline-block max-w-full rounded-2xl px-3.5 py-2.5 text-left text-sm leading-relaxed ${own ? "bg-primary/10 text-[#241c83]" : "border border-[#e9e7f4] bg-card text-card-foreground"} ${failed ? "ring-1 ring-destructive/50" : ""}`}>
           {content.kind === "text" && <RichText text={content.text} mentions={mentionLabels} />}
           {content.kind === "image" && <PhotoView key={content.url} url={content.url} thumbnail={content.thumbnail} />}
@@ -90,8 +109,13 @@ export function MessageBubble({ message, own, grouped, retry }: { message: ChatM
               <span className="min-w-0"><span className="block font-medium wrap-anywhere underline underline-offset-2">{content.name}</span><span className="text-xs text-muted-foreground">{fileSize(content.size)}</span></span>
             </a>
           )}
-          {content.kind === "card" && <div className="border-s-2 border-accent ps-3"><p className="font-semibold">{content.label}</p><p className="line-clamp-4 whitespace-pre-wrap wrap-anywhere">{content.text}</p></div>}
-          {content.kind === "unsupported" && <p className="text-muted-foreground">Unsupported message</p>}
+          {doubt && <DoubtCard doubt={doubt} asker={profile?.name || (own ? "You" : displayName)}
+            status={doubtStatus} sentTime={message.sentTime}
+            photo={doubtPhoto && <PhotoView key={doubtPhoto} url={doubtPhoto} thumbnail={doubtPhoto} />} />}
+          {answer && <AnswerCard answer={answer} messageId={message.messageId} roomId={roomId}
+            metadata={message.metadata} jumpTo={quoteTarget?.(answer.doubtMessageId)} />}
+          {content.kind === "card" && message.messageType !== MSG.DOUBT && message.messageType !== MSG.ANSWER && <div className="border-s-2 border-accent ps-3"><p className="font-semibold">{content.label}</p><p className="line-clamp-4 whitespace-pre-wrap wrap-anywhere">{content.text}</p></div>}
+          {(content.kind === "unsupported" || (message.messageType === MSG.ANSWER && !answer)) && <p className="text-muted-foreground">Unsupported message</p>}
         </div>
         <div className={`flex min-h-5 flex-wrap items-center gap-1.5 px-1 text-[0.6875rem] text-muted-foreground ${own ? "justify-end" : ""}`}>
           <span>{time}</span>

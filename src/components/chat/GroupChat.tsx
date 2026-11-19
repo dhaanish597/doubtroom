@@ -6,7 +6,8 @@ import { nanoid } from "nanoid";
 
 import { trackRoomEvent } from "@/lib/analytics";
 import { initNexconn } from "@/lib/nexconn/client";
-import { MESSAGE_STATUS, STANDARD_MSG, renderableMessage } from "@/lib/nexconn/messages";
+import { BOT_IDS } from "@/lib/nexconn/identities";
+import { MSG, MESSAGE_STATUS, STANDARD_MSG, renderableMessage } from "@/lib/nexconn/messages";
 import { notifyChannelChange, useConnection } from "@/lib/stores/connection";
 import { channelKeyFor, useMessages, type ChatMessage } from "@/lib/stores/messages";
 import { loadProfiles } from "@/lib/stores/profiles";
@@ -15,10 +16,40 @@ import { Composer, type SendDraft } from "./Composer";
 import { captureMessageAnchor, MessageList, type ScrollAnchor } from "./MessageList";
 
 const EMPTY_MESSAGES: ChatMessage[] = [];
-type PendingMessage = { message: ChatMessage; draft: SendDraft; owner: string };
+type PendingMessage = { message: ChatMessage; draft: SendDraft; owner: string; imageUrl?: string };
+const NO_UNITS: string[] = [];
+
+async function uploadDoubtImage(roomId: string, doubtId: string, file: File) {
+  const response = await fetch("/api/uploads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ roomId, doubtId, contentType: file.type, size: file.size }),
+  });
+  if (!response.ok) throw new Error("Photo upload unavailable");
+  const { uploadUrl, publicUrl } = await response.json() as { uploadUrl: string; publicUrl: string };
+  const upload = await fetch(uploadUrl, {
+    method: "PUT", headers: { "Content-Type": file.type, "Cache-Control": "max-age=3600" }, body: file,
+  });
+  // A prior attempt may have uploaded the bytes and lost the response.
+  if (!upload.ok && !((await fetch(publicUrl, { method: "HEAD" })).ok)) throw new Error("Photo upload failed");
+  return publicUrl;
+}
+
+async function requestTa(body: object) {
+  const request = () => fetch("/api/ta/ask", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body), keepalive: true,
+  });
+  const response = await request().catch(request);
+  if (!response.ok) throw new Error("TA request failed");
+}
 type History = { createQuery: (startTime?: number) => MessagesQuery; busy: boolean; more: boolean; oldest?: number };
 
-export function GroupChat({ roomId, title, dev = false }: { roomId: string; title: string; dev?: boolean }) {
+export function GroupChat({ roomId, title, initialUnits = NO_UNITS, dev = false }: {
+  roomId: string; title: string; initialUnits?: string[]; dev?: boolean;
+}) {
+  const units = useRooms((state) => state.rooms?.find((room) => room.id === roomId)?.units ?? initialUnits);
+  const [taError, setTaError] = useState("");
   const userId = useConnection((state) => state.userId);
   const connected = useConnection((state) => state.status === "connected") && Boolean(userId);
   const key = channelKeyFor({ channelType: 3, channelId: roomId });
@@ -160,9 +191,9 @@ export function GroupChat({ roomId, title, dev = false }: { roomId: string; titl
 
   async function send(item: PendingMessage) {
     if (!connected || item.owner !== userId || sending.current.has(item.message.messageId)
-      || ("file" in item.draft && uploading.current)) return;
+      || ("file" in item.draft && item.draft.file && uploading.current)) return;
     const { message, draft } = item;
-    const isPhoto = "file" in draft;
+    const isPhoto = "file" in draft && Boolean(draft.file);
     sending.current.add(message.messageId);
     if (isPhoto) {
       uploading.current = true;
@@ -171,12 +202,21 @@ export function GroupChat({ roomId, title, dev = false }: { roomId: string; titl
     setPending((entries) => [...entries.filter((entry) => entry.message.messageId !== message.messageId),
       { ...item, message: { ...message, sentStatus: MESSAGE_STATUS.SENDING } },
     ]);
+    let imageUrl = item.imageUrl;
     try {
-      const { GroupChannel, Helper, MentionedType, SendTextMessageParams } = await initNexconn();
+      const { GroupChannel, Helper, MentionedType, SendMessageParams, SendTextMessageParams } = await initNexconn();
       if (useConnection.getState().userId !== item.owner) throw new Error("Chat identity changed");
       const room = new GroupChannel(roomId);
       let result;
-      if (isPhoto) {
+      if (draft.kind === "doubt") {
+        if (draft.file && !imageUrl) imageUrl = await uploadDoubtImage(roomId, draft.doubtId, draft.file);
+        if (useConnection.getState().userId !== item.owner) throw new Error("Chat identity changed");
+        const params = new SendMessageParams({
+          v: 1, doubtId: draft.doubtId, text: draft.text, unit: draft.unit, imageUrl, lang: "en",
+        }, MSG.DOUBT);
+        params.metadata = { st: "open" };
+        result = await room.sendMessage(params);
+      } else if (draft.kind === "photo") {
         const image = await Helper.createSendImageMessageParams(draft.file).catch(() => null);
         const updateProgress = (value: number) => {
           if (Number.isFinite(value)) setProgress(Math.max(0, Math.min(100, value)));
@@ -200,11 +240,23 @@ export function GroupChat({ roomId, title, dev = false }: { roomId: string; titl
       useMessages.getState().mergeMessages([result.data]);
       recordRoomMessage(result.data, false);
       notifyChannelChange();
-      if (!dev) trackRoomEvent("message_sent", roomId);
+      if (!dev) {
+        trackRoomEvent("message_sent", roomId);
+        const { messageId } = result.data;
+        const ask = draft.kind === "doubt"
+          ? { roomId, messageId, mode: "doubt", doubtId: draft.doubtId, text: draft.text, unit: draft.unit, imageUrl }
+          : draft.kind === "chat" && draft.mentions.includes(BOT_IDS.TA)
+            ? { roomId, messageId, mode: "mention", text: draft.text } : null;
+        if (draft.kind === "doubt") trackRoomEvent("doubt_posted", roomId);
+        if (ask) {
+          setTaError("");
+          void requestTa(ask).catch(() => setTaError("Your message was posted, but the TA couldn’t start an answer."));
+        }
+      }
       setPending((entries) => entries.filter((entry) => entry.message.messageId !== message.messageId));
     } catch {
       setPending((entries) => entries.map((entry) => entry.message.messageId === message.messageId
-        ? { ...entry, message: { ...entry.message, sentStatus: MESSAGE_STATUS.FAILED } } : entry));
+        ? { ...entry, imageUrl, message: { ...entry.message, sentStatus: MESSAGE_STATUS.FAILED } } : entry));
     } finally {
       sending.current.delete(message.messageId);
       if (isPhoto) {
@@ -216,7 +268,7 @@ export function GroupChat({ roomId, title, dev = false }: { roomId: string; titl
 
   return (
     <section className="flex min-h-0 flex-1 flex-col" aria-label={`Chat in ${title}`}>
-      <MessageList messages={messages} userId={userId} ready={ready} connected={connected} loading={loading} error={historyError} hasOlder={hasOlder}
+      <MessageList roomId={roomId} messages={messages} userId={userId} ready={ready} connected={connected} loading={loading} error={historyError} hasOlder={hasOlder}
         viewportRef={viewport} anchorRef={anchor} onLoad={() => {
           const cursor = history.current;
           if (cursor) void load(cursor, ready);
@@ -225,12 +277,15 @@ export function GroupChat({ roomId, title, dev = false }: { roomId: string; titl
           const item = pending.find((entry) => entry.message.messageId === id);
           if (item) void send(item);
         }} />
-      <Composer roomId={roomId} connected={connected} progress={progress} onSend={(draft) => {
+      {taError && <p role="alert" className="border-t px-4 py-2 text-sm text-destructive">{taError}</p>}
+      <Composer roomId={roomId} units={units} allowDoubts={!dev} connected={connected} progress={progress} onSend={(draft) => {
         if (!userId) return;
         void send({ owner: userId, draft, message: {
           messageId: `local:${nanoid()}`, messageType: STANDARD_MSG.TEXT, senderUserId: userId,
           sentStatus: MESSAGE_STATUS.SENDING, sentTime: Date.now(),
-          content: "file" in draft ? { text: `Photo: ${draft.file.name}` } : { text: draft.text, mentionedInfo: { userIdList: draft.mentions } },
+          content: draft.kind === "photo" ? { text: `Photo: ${draft.file.name}` }
+            : draft.kind === "doubt" ? { text: draft.text || "Photo doubt" }
+              : { text: draft.text, mentionedInfo: { userIdList: draft.mentions } },
           metadata: new Map(),
         } });
       }} />

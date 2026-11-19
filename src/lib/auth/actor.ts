@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import type { User } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { serverSupabase } from "@/lib/supabase/server";
 import type { OnboardingPlan } from "@/lib/onboarding/plan";
@@ -61,4 +62,7 @@ export function publicProfile(profile: ActorProfile): PublicProfile {
   return { id, nexconn_user_id, display_name, avatar_url, college, dept, year, section, role, lang, is_try, onboarded_at };
 }
 
-export const getPageActor = cache(() => getActor());
+export const getPageActor = cache(async () => {
+  await connection();
+  return getActor();
+});

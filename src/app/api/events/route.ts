@@ -8,7 +8,7 @@ import { roomsForActor } from "@/lib/rooms/server";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 const eventSchema = z.strictObject({
-  name: z.enum(["message_sent", "room_opened"]),
+  name: z.enum(["message_sent", "room_opened", "doubt_posted"]),
   props: z.strictObject({ roomId: z.string().regex(/^[a-z0-9_]{1,64}$/) }),
 });
 
