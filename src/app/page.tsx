@@ -14,6 +14,10 @@ export default function Home() {
         <Link href="/login" className="mt-8 inline-flex min-h-12 items-center rounded-xl bg-primary-foreground px-5 font-semibold text-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary-foreground">
           Sign in with Google
         </Link>
+        <nav aria-label="Policies" className="mt-8 flex flex-wrap gap-5 text-sm">
+          <Link href="/privacy" className="underline underline-offset-4">Privacy Policy</Link>
+          <Link href="/terms" className="underline underline-offset-4">Terms of Service</Link>
+        </nav>
       </div>
     </main>
   );
