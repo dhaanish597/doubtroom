@@ -6,6 +6,7 @@ import { nanoid } from "nanoid";
 
 import { trackDmEvent } from "@/lib/analytics";
 import { initNexconn } from "@/lib/nexconn/client";
+import { BOT_IDS } from "@/lib/nexconn/identities";
 import { MESSAGE_STATUS, STANDARD_MSG } from "@/lib/nexconn/messages";
 import { notifyChannelChange, useConnection } from "@/lib/stores/connection";
 import { channelKeyFor, useMessages, type ChatMessage } from "@/lib/stores/messages";
@@ -28,6 +29,14 @@ const READ = 50;
 
 type ChatDraft = Extract<SendDraft, { kind: "chat" | "photo" }>;
 type PendingMessage = { message: ChatMessage; draft: ChatDraft; owner: string };
+
+/** Demo mode: the scripted senior replies in this DM a few seconds later. */
+function pingDemoMentor(text: string) {
+  void fetch("/api/try/mentor-ping", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: text.slice(0, 2000) }),
+  }).catch(() => undefined);
+}
 
 function usePeerTyping(peerId: string, connected: boolean) {
   const [typing, setTyping] = useState(false);
@@ -161,6 +170,7 @@ export function DirectChat({ peerId, peerName, doubt }: { peerId: string; peerNa
       useMessages.getState().mergeMessages([result.data]);
       notifyChannelChange();
       trackDmEvent("dm_message_sent", peerId);
+      if (peerId === BOT_IDS.DEMO_MENTOR && draft.kind === "chat") pingDemoMentor(draft.text);
       setPending((entries) => entries.filter((entry) => entry.message.messageId !== message.messageId));
     } catch {
       setSendError("Message not sent. Tap Retry to try again.");

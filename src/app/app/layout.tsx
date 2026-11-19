@@ -2,6 +2,8 @@ import { Suspense, type ReactNode } from "react";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 
+import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
+import { TourChecklist } from "@/components/try/TourChecklist";
 import { getPageActor } from "@/lib/auth/actor";
 import { NexconnProvider } from "@/lib/nexconn/provider";
 import { AppNav } from "./nav";
@@ -21,8 +23,10 @@ async function AuthenticatedApp({ children }: { children: ReactNode }) {
     <div data-app-shell className="flex min-h-dvh flex-col">
       <NexconnProvider>
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+        {actor.kind === "try" && <TourChecklist />}
         <AppNav mentor={actor.profile.role === "mentor"} />
       </NexconnProvider>
+      <ServiceWorkerRegistration />
     </div>
   );
 }

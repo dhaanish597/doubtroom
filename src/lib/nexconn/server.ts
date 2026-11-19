@@ -130,7 +130,31 @@ export async function joinGroup(channelId: string, userIds: string[]): Promise<v
   }
 }
 
-type CustomType = (typeof MSG)[keyof typeof MSG];
+type CustomType = (typeof MSG)[keyof typeof MSG] | typeof TEXT_MESSAGE;
+const TEXT_MESSAGE = "RC:TxtMsg";
+
+/** Plain text group message, for example seeded demo chatter. */
+export function sendGroupText(fromUserId: string, channelId: string, text: string, opts: SendGroupOptions = {}) {
+  return sendGroupCustom(fromUserId, channelId, TEXT_MESSAGE, { text }, opts);
+}
+
+/** Plain text DM from a server identity (the demo mentor). Returns the delivered message ID. */
+export async function sendDirectText(fromUserId: string, toUserId: string, text: string): Promise<string | undefined> {
+  const content = JSON.stringify({ text });
+  if (Buffer.byteLength(content, "utf8") > 128 * 1024) {
+    throw new RangeError("Nexconn message content exceeds 128 KB");
+  }
+  const { result } = await request("send the direct message", () => messages.sendDirectChannelMessage({
+    fromUserId,
+    toUserIds: [toUserId],
+    messageType: TEXT_MESSAGE,
+    content,
+    isEchoToSender: 0,
+    shouldPersist: 1,
+    pushContent: "New message from a senior",
+  }));
+  return result?.messageIds?.find((delivery) => delivery.userId === toUserId)?.messageId;
+}
 type SendGroupOptions = Pick<GroupChannelMessageSendRequest,
   "pushContent" | "hasMetadata" | "hasMention" | "needReadReceipt" | "isEchoToSender" | "shouldPersist"
 > & { metadata?: Record<string, string> };

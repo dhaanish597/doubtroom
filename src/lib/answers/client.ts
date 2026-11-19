@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import { track } from "@/lib/analytics";
 import type { MentorInboxResponse, VerifyResult, VoteResult } from "./types";
 
 export class ApiFailure extends Error {
@@ -24,12 +25,16 @@ async function post<T>(url: string, body: object, fallback: string): Promise<T> 
   return data as T;
 }
 
-export function setVote(answerId: string, voted: boolean) {
-  return post<VoteResult>(`/api/answers/${encodeURIComponent(answerId)}/upvote`, { voted }, "Could not save your upvote");
+export async function setVote(answerId: string, voted: boolean) {
+  const result = await post<VoteResult>(`/api/answers/${encodeURIComponent(answerId)}/upvote`, { voted }, "Could not save your upvote");
+  if (result.voted) track("upvoted");
+  return result;
 }
 
-export function setVerified(answerId: string, verified: boolean) {
-  return post<VerifyResult>(`/api/answers/${encodeURIComponent(answerId)}/verify`, { verified }, "Could not verify the answer");
+export async function setVerified(answerId: string, verified: boolean) {
+  const result = await post<VerifyResult>(`/api/answers/${encodeURIComponent(answerId)}/verify`, { verified }, "Could not verify the answer");
+  if (verified) track("verified");
+  return result;
 }
 
 export function recordSeniorAnswer(body: { roomId: string; doubtId: string; messageId: string; text: string }) {

@@ -1,11 +1,11 @@
 import "server-only";
 
 import type { Actor } from "@/lib/auth/actor";
+import { canUseRoom } from "@/lib/auth/sandbox";
 import { adminSupabase } from "@/lib/supabase/admin";
 
 export async function memberRoom(actor: Actor, roomId: unknown) {
-  if (typeof roomId !== "string" || !/^[a-z0-9_]{1,64}$/.test(roomId)) return null;
-  if (actor.kind === "try" && !roomId.startsWith("demo_")) return null;
+  if (typeof roomId !== "string" || !canUseRoom(actor.kind, roomId)) return null;
 
   const { data, error } = await adminSupabase().from("room_members")
     .select("rooms!inner(id,title,kind,course_code,courses(title,units))")
@@ -16,5 +16,5 @@ export async function memberRoom(actor: Actor, roomId: unknown) {
     }>();
   if (error) throw error;
   const room = data?.rooms;
-  return room && (actor.kind !== "try" || room.kind === "demo") ? room : null;
+  return room && canUseRoom(actor.kind, room.id, room.kind) ? room : null;
 }

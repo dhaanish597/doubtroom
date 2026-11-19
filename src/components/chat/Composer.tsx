@@ -17,7 +17,7 @@ export type SendDraft =
   /** A senior's reply to the doubt in `reply`. */
   | { kind: "answer"; text: string };
 
-export function Composer({ roomId, units, allowDoubts, connected, progress, onSend, allowMentions = true, prefill = "", onInput, reply }: {
+export function Composer({ roomId, units, allowDoubts, connected, progress, onSend, allowMentions = true, prefill = "", prefillMode, prefillUnit, onInput, reply }: {
   roomId: string;
   units: string[];
   allowDoubts: boolean;
@@ -27,18 +27,25 @@ export function Composer({ roomId, units, allowDoubts, connected, progress, onSe
   allowMentions?: boolean;
   /** Fills an empty composer once, for example with a quoted doubt. */
   prefill?: string;
+  /** With a mode, the prefill replaces the draft and switches mode (the demo tour's example doubt). */
+  prefillMode?: "chat" | "doubt";
+  prefillUnit?: string;
   onInput?: () => void;
   /** Senior answer mode: the next message replies to this doubt. */
   reply?: { quotedText: string; onCancel: () => void } | null;
 }) {
   const [draft, setDraft] = useState(prefill);
   const [appliedPrefill, setAppliedPrefill] = useState(prefill);
+  const [mode, setMode] = useState<"chat" | "doubt">(prefill && prefillMode === "doubt" && allowDoubts ? "doubt" : "chat");
+  const [unit, setUnit] = useState(prefill && prefillUnit && units.includes(prefillUnit) ? prefillUnit : "");
   if (prefill !== appliedPrefill) {
     setAppliedPrefill(prefill);
-    if (prefill && !draft) setDraft(prefill.slice(0, 2000));
+    if (prefill && (!draft || prefillMode)) setDraft(prefill.slice(0, 2000));
+    if (prefill && prefillMode && (prefillMode === "chat" || allowDoubts)) {
+      setMode(prefillMode);
+      if (prefillUnit && units.includes(prefillUnit)) setUnit(prefillUnit);
+    }
   }
-  const [mode, setMode] = useState<"chat" | "doubt">("chat");
-  const [unit, setUnit] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
   const [cursor, setCursor] = useState(0);

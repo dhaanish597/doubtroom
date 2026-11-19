@@ -3,6 +3,7 @@ import "server-only";
 import { connection } from "next/server";
 import { notFound, redirect } from "next/navigation";
 import { getPageActor, type Actor } from "@/lib/auth/actor";
+import { canUseRoom } from "@/lib/auth/sandbox";
 import { adminSupabase } from "@/lib/supabase/admin";
 import type { Room } from "./types";
 
@@ -17,7 +18,7 @@ type RoomRow = {
 };
 
 export async function roomsForActor(actor: Actor, roomId?: string): Promise<Room[]> {
-  if (actor.kind === "try" && roomId && !roomId.startsWith("demo_")) return [];
+  if (roomId && !canUseRoom(actor.kind, roomId)) return [];
   await connection();
   const now = new Date().toISOString();
   const db = adminSupabase();
@@ -27,7 +28,7 @@ export async function roomsForActor(actor: Actor, roomId?: string): Promise<Room
   const member = await membership;
   if (member.error) throw member.error;
 
-  const ids = member.data.map(({ room_id }) => room_id).filter((id) => actor.kind !== "try" || id.startsWith("demo_"));
+  const ids = member.data.map(({ room_id }) => room_id).filter((id) => canUseRoom(actor.kind, id));
   if (!ids.length) return [];
 
   const result = await db.from("rooms")
@@ -40,7 +41,7 @@ export async function roomsForActor(actor: Actor, roomId?: string): Promise<Room
     .order("kind").order("title").returns<RoomRow[]>();
   if (result.error) throw result.error;
 
-  return result.data.filter((room) => actor.kind !== "try" || room.kind === "demo").map((room) => {
+  return result.data.filter((room) => canUseRoom(actor.kind, room.id, room.kind)).map((room) => {
     const eve = room.exam_eves[0];
     return {
       id: room.id,
