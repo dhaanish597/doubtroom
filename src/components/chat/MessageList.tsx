@@ -146,6 +146,8 @@ export function MessageList({ roomId, messages, userId, ready, connected, loadin
           )}
           <ol className="mt-auto flex flex-col" aria-label="Conversation">
             {messages.map((message, index) => {
+              // Empty server-sent text from before D-013 has no body to show.
+              if (message.messageType === STANDARD_MSG.TEXT && renderableMessage(message.messageType, message.content).kind === "unsupported") return null;
               const previous = messages[index - 1];
               const nextDay = !previous || messageDate(previous.sentTime) !== messageDate(message.sentTime);
               const grouped = groupMessages(previous, message);
