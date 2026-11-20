@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>DoubtRoom | Nexconn Build Challenge 2026</title>
+<style>
+:root{--ind:#3B2FC9;--amb:#F5A524;--ink:#1c1b2e;--mut:#5d5b78;--bg:#f6f5ff;--line:#dcd9f5}
+@page{size:A4;margin:0}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink);font-size:10.6pt;line-height:1.5}
+.page{width:210mm;height:297mm;padding:16mm 17mm 14mm;position:relative;overflow:hidden;page-break-after:always;break-after:page}
+.page:last-child{page-break-after:auto;break-after:auto}
+.top{display:flex;justify-content:space-between;font-size:8.5pt;color:var(--mut);border-bottom:2px solid var(--ind);padding-bottom:5px;margin-bottom:14px}
+.top b{color:var(--ind)}
+.foot{position:absolute;left:17mm;right:17mm;bottom:9mm;font-size:8pt;color:var(--mut);display:flex;justify-content:space-between}
+h1{font-size:34pt;line-height:1.05;margin:0 0 8px;color:var(--ind)}
+h2{font-size:20pt;line-height:1.15;margin:0 0 6px;color:var(--ind)}
+h3{font-size:11.5pt;margin:0 0 3px;color:var(--ink)}
+.kicker{font-size:8.5pt;letter-spacing:.12em;text-transform:uppercase;color:var(--amb);font-weight:700;margin-bottom:4px}
+p{margin:0 0 8px}
+.lead{font-size:12.5pt;color:var(--mut)}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.bar{height:5px;background:var(--amb);width:44px;border-radius:3px;margin:0 0 10px}
+.key{background:var(--ind);color:#fff;border-radius:10px;padding:12px 16px;margin:14px 0}
+.key small{display:block;opacity:.8;font-size:8.5pt;letter-spacing:.08em;text-transform:uppercase}
+.key code{font-size:19pt;font-weight:700;color:var(--amb);letter-spacing:.04em}
+.links{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:10pt}
+.links b{color:var(--ind)}
+a{color:var(--ind);text-decoration:none}
+table{border-collapse:collapse;width:100%;font-size:8.8pt}
+th{background:var(--ind);color:#fff;text-align:left;padding:5px 7px}
+td{padding:4.5px 7px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:nth-child(even) td{background:var(--bg)}
+.stat{text-align:center}.stat b{display:block;font-size:22pt;color:var(--ind);line-height:1.1}.stat span{font-size:8.5pt;color:var(--mut)}
+.step{border-left:4px solid var(--amb);padding:2px 0 2px 10px;margin-bottom:9px}
+.flow{display:flex;gap:6px;align-items:stretch;margin:8px 0}
+.flow div{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:7px 8px;font-size:9pt}
+.flow div b{color:var(--ind);display:block}
+.arrow{flex:0 0 auto!important;background:none!important;border:0!important;padding:0 !important;align-self:center;color:var(--amb);font-size:16pt;font-weight:700}
+.note{font-size:9pt;color:var(--mut)}
+.ph{border:1.5px dashed var(--amb);border-radius:8px;padding:9px 12px;color:var(--mut);font-size:9.5pt}
+img.hero{width:100%;max-height:78mm;object-fit:contain;object-position:left top;border-radius:10px;border:1px solid var(--line);display:block}
+ul{margin:0 0 8px;padding-left:17px}li{margin-bottom:3px}
+</style></head><body>
+
+<!-- 1 COVER -->
+<section class="page">
+  <div class="top"><span><b>DoubtRoom</b> | Nexconn Build Challenge 2026</span><span>1 / 7</span></div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px"><img src="icon.png" width="46" height="46" alt=""><div class="kicker" style="margin:0">Challenge submission, updated 20 November 2026</div></div>
+  <h1>DoubtRoom</h1>
+  <p class="lead">Exam-season study rooms for Anna University students. Post a doubt in your subject room, read the AI teaching assistant's answer inside the chat, and see which answers a senior has verified.</p>
+  <div class="key"><small>Nexconn App Key</small><code>{{APP_KEY}}</code></div>
+  <div class="links">
+    <b>Live app</b><a href="https://doubtroom-ochre.vercel.app">https://doubtroom-ochre.vercel.app</a>
+    <b>Try the room</b><span><a href="https://doubtroom-ochre.vercel.app/try">https://doubtroom-ochre.vercel.app/try</a> (24-hour sandbox, no sign-in)</span>
+    <b>Live impact</b><a href="https://doubtroom-ochre.vercel.app/impact">https://doubtroom-ochre.vercel.app/impact</a>
+    <b>GitHub</b><a href="https://github.com/dhaanish597/doubtroom">https://github.com/dhaanish597/doubtroom</a>
+    <b>Demo video</b><a href="https://doubtroom-ochre.vercel.app/downloads/doubtroom-demo.mp4">https://doubtroom-ochre.vercel.app/downloads/doubtroom-demo.mp4</a>
+  </div>
+  <div style="margin-top:14px"><img class="hero" src="../assets/demo.gif" alt="A Computer Networks doubt and its senior-verified answer in the seeded demo room"></div>
+  <p class="note" style="margin-top:6px">The seeded Computer Networks room in the /try sandbox: a doubt, the TA's answer and a mentor verification.</p>
+  <div class="foot"><span>Built during the Nexconn Build Challenge, 18 to 22 November 2026</span><span>Dhaanish</span></div>
+</section>
+
+<!-- 2 PROBLEM -->
+<section class="page">
+  <div class="top"><span><b>DoubtRoom</b> | Problem and users</span><span>2 / 7</span></div>
+  <div class="kicker">The problem</div><h2>A good answer gets lost before exam morning</h2><div class="bar"></div>
+  <p>A question about TCP can disappear under timetable updates in the class group. The senior who knows the answer may be in another section. On exam morning, the student still has to work out which explanation to trust and revise.</p>
+  <p>DoubtRoom gives each subject and section its own chat room for exam season. Questions stay as structured cards, the answer sits beside the question, and a mentor's verification is visible on the card itself.</p>
+  <div class="kicker" style="margin-top:16px">Who it is for</div>
+  <div class="grid3" style="margin-top:6px">
+    <div class="card"><h3>Priya</h3><p class="note"><b>Third-year student</b></p><p>A formula makes sense until the worked example switches units. She needs to post the exact question, with a photo if it is in her notebook, and find the answer again when she revises.</p></div>
+    <div class="card"><h3>Arun</h3><p class="note"><b>Fourth-year mentor</b></p><p>With fifteen minutes between classes, he needs a short list of questions that still need a human check, and a way to confirm or correct an AI draft.</p></div>
+    <div class="card"><h3>The class rep</h3><p class="note"><b>Section administrator</b></p><p>When an exam hall changes, the rep needs the notice to stay pinned and a way to check how many members have seen it.</p></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>Scope today</h3>
+    <p style="margin:0">The catalog covers four Anna University R2021 courses, with subject and section rooms provisioned per class. Real course codes for a given college's current regulation still need to be confirmed before a wider launch.</p></div>
+  <div class="foot"><span>DoubtRoom write-up</span><span>2 / 7</span></div>
+</section>
+
+<!-- 3 HOW IT WORKS -->
+<section class="page">
+  <div class="top"><span><b>DoubtRoom</b> | How it works</span><span>3 / 7</span></div>
+  <div class="kicker">The student journey</div><h2>Post, answer, verify</h2><div class="bar"></div>
+  <div class="flow">
+    <div><b>1. Post a doubt</b>Pick the unit and type the question, or attach a photo. Or mention @TA in normal chat.</div><div class="arrow">&rarr;</div>
+    <div><b>2. TA answers in the room</b>The TA is a Nexconn bot user, <code>bot_ta</code>, so its answer appears as a chat message.</div><div class="arrow">&rarr;</div>
+    <div><b>3. A senior verifies</b>A mentor verifies, adds a better answer, or takes it to a 1:1 chat.</div>
+  </div>
+  <div class="step"><h3>Photo doubts and notes citations</h3><p style="margin:0">Photo doubts are read by Gemini (<code>gemini-3.5-flash-lite</code>). Course notes uploaded by an admin are chunked and embedded (<code>gemini-embedding-2</code>), so an answer can cite its source as [S1], [S2]. Answers follow the language the student chose: English, Tamil or Tanglish.</p></div>
+  <div class="step"><h3>Upvotes and verification</h3><p style="margin:0">Members upvote helpful answers. A course mentor verifies an answer, which updates the card live through message metadata. The room doubt board groups open, answered and verified questions, and the mentor inbox lists what still needs a review.</p></div>
+  <div class="step"><h3>Ask a senior</h3><p style="margin:0">From an answer, a student opens a private direct chat with a mentor. The quoted doubt travels with the conversation, with typing status and read receipts.</p></div>
+  <div class="step"><h3>Announcements</h3><p style="margin:0">A class rep posts a pinned announcement. The card requests group read receipts and shows "Seen by X of Y" with a reader list for the rep. If the plan does not expose receipts, it falls back to "Delivered to N members". This path is built with that fallback but has not yet been checked live with three or more real accounts.</p></div>
+  <div class="grid2">
+    <div class="card"><h3>Exam Eve</h3><p style="margin:0">A scheduled Nexconn open channel opens before each paper so students can revise together and ask the TA. The cron job creates the channel for tomorrow's papers.</p></div>
+    <div class="card"><h3>Morning recap</h3><p style="margin:0">At 07:00 IST a scheduled job looks back 24 hours, ranks verified answers first, then by upvotes, and posts up to five distinct doubts per room as a recap card.</p></div>
+  </div>
+  <div class="card" style="margin-top:9px"><h3>Judge sandbox at /try</h3><p style="margin:0">A signed 24-hour cookie opens a seeded Computer Networks room with classmates and a scripted demo mentor, with no Google sign-in. Demo access is scoped to the demo room, and each IP can start up to 40 sandboxes per hour.</p></div>
+  <div class="foot"><span>DoubtRoom write-up</span><span>3 / 7</span></div>
+</section>
+
+<!-- 4 NEXCONN -->
+<section class="page">
+  <div class="top"><span><b>DoubtRoom</b> | Nexconn integration</span><span>4 / 7</span></div>
+  <div class="kicker">Nexconn integration</div><h2>What DoubtRoom uses</h2><div class="bar"></div>
+  <p class="note">Packages: <code>@nexconn/engine</code> and <code>@nexconn/chat</code> 26.2.1, <code>@nexconn/server-sdk</code> v0.1.2. No Call SDK.</p>
+  <table>
+    <tr><th style="width:24%">Feature</th><th>How it is used</th></tr>
+    <tr><td>Chat identity</td><td>Server <code>issueAccessToken</code> for the authenticated actor; browser <code>NCEngine.connect</code>.</td></tr>
+    <tr><td>Subject and section rooms</td><td>Group channels created and joined during provisioning, onboarding and the admin room sync.</td></tr>
+    <tr><td>History and messages</td><td>Paged message queries, text and image messages, group @mentions.</td></tr>
+    <tr><td>Study cards</td><td>Custom message types for doubt, answer, announcement and recap, registered right after initialize.</td></tr>
+    <tr><td>AI TA as a member</td><td>Server API group message sent as bot user <code>bot_ta</code>.</td></tr>
+    <tr><td>TA trigger</td><td><code>message:send</code> webhook: signature verified, deduplicated by message ID, answered once. The browser relay is a fallback.</td></tr>
+    <tr><td>Live upvote and verify</td><td>Message metadata updated on the server and read by connected clients.</td></tr>
+    <tr><td>Mentor DMs</td><td>Direct channels with the quoted doubt, typing status and read receipts.</td></tr>
+    <tr><td>Mentor availability</td><td>Online-status subscription, with a cached server <code>getUserConnectionStatus</code> lookup as fallback. Not yet verified live with a mentor going on and offline.</td></tr>
+    <tr><td>Announcement readers</td><td>Group read receipt requests and receipt-user query, with a "Delivered to N" fallback.</td></tr>
+    <tr><td>Exam Eve</td><td>Open channel creation, entry and bot messages.</td></tr>
+    <tr><td>Moderation</td><td>Group mute list and the app profanity list.</td></tr>
+    <tr><td>Reconnect</td><td>Connection status handler and history backfill after a drop.</td></tr>
+  </table>
+  <div class="card" style="margin-top:10px"><h3>Why Nexconn mattered</h3>
+    <p style="margin:0">The TA is a real chat member rather than a UI overlay, so its answers live in the same history as human messages. Message metadata lets a mentor's verification reach every reader's card without a reload. Direct channels, group and open channels let one SDK cover rooms, 1:1 help and the Exam Eve session.</p></div>
+  <div class="foot"><span>DoubtRoom write-up</span><span>4 / 7</span></div>
+</section>
+
+<!-- 5 ARCHITECTURE -->
+<section class="page">
+  <div class="top"><span><b>DoubtRoom</b> | Architecture and safeguards</span><span>5 / 7</span></div>
+  <div class="kicker">Architecture</div><h2>Who owns each part</h2><div class="bar"></div>
+  <div class="grid2" style="margin-bottom:10px">
+    <div class="card"><h3>Browser / PWA</h3><p style="margin:0" class="note">React UI, the Nexconn chat SDK, and a direct connection to Nexconn for messages.</p></div>
+    <div class="card"><h3>Next.js on Vercel</h3><p style="margin:0" class="note">Actor and room checks, AI requests, the webhook, server messages and the 07:00 IST cron.</p></div>
+    <div class="card"><h3>Supabase</h3><p style="margin:0" class="note">Google sign-in, Postgres, pgvector for notes, signed photo uploads.</p></div>
+    <div class="card"><h3>Nexconn Cloud</h3><p style="margin:0" class="note">Group, direct and open channels, receipts, message metadata, and the <code>message:send</code> webhook.</p></div>
+  </div>
+  <div class="kicker">AI pipeline</div>
+  <div class="flow">
+    <div><b>Doubt or @TA sent</b>Delivered by Nexconn to the room.</div><div class="arrow">&rarr;</div>
+    <div><b>Webhook</b>Signature checked, deduped, membership and quota checked.</div><div class="arrow">&rarr;</div>
+    <div><b>Model</b>Groq for text, Gemini for photos.</div><div class="arrow">&rarr;</div>
+    <div><b>Bot reply</b>Posted as <code>bot_ta</code>, status metadata updated.</div>
+  </div>
+  <ul class="note" style="font-size:9.4pt">
+    <li><b>Groq</b> <code>openai/gpt-oss-120b</code> answers text doubts, @TA mentions, Exam Eve and the morning recap.</li>
+    <li><b>Gemini</b> <code>gemini-3.5-flash-lite</code> reads photo doubts and is the fallback for text. <code>gemini-embedding-2</code> grounds answers in uploaded notes with [S#] citations.</li>
+    <li>The webhook is the primary trigger. The browser also asks <code>/api/ta/ask</code> as a backup, and the server reserves each message once, so each message is answered once. A provider or quota failure shows a visible status card instead of silence.</li>
+    <li>A seven-day cache can reuse eligible text answers.</li>
+  </ul>
+  <div class="kicker" style="margin-top:6px">Safeguards</div>
+  <div class="grid2">
+    <div class="card"><h3>Credentials</h3><p style="margin:0" class="note">The server derives the chat identity from the session; tokens are issued only for the authenticated actor and never for a client-supplied user ID. The Nexconn App Secret, Supabase service-role key and model keys stay server-side.</p></div>
+    <div class="card"><h3>Webhook</h3><p style="margin:0" class="note">AppKey header and <code>sha1(secret + nonce + timestamp)</code> signature checked in constant time, timestamps limited to 5 minutes, then acknowledged and processed after the response. The signature does not cover the body, so membership, quota and message-ID checks bound a replay.</p></div>
+    <div class="card"><h3>Roles and budgets</h3><p style="margin:0" class="note">Room membership gates room actions, and course roles gate verification. AI requests have per-user, per-room and global limits, reserved before a provider is called.</p></div>
+    <div class="card"><h3>Judge mode</h3><p style="margin:0" class="note">A signed, expiring cookie identifies the visitor. Access is scoped to the demo room and its scripted mentor. Admin room sync is admin-gated and returns 401 to anonymous callers.</p></div>
+  </div>
+  <div class="foot"><span>DoubtRoom write-up</span><span>5 / 7</span></div>
+</section>
+
+<!-- 6 TRACTION -->
+<section class="page">
+  <div class="top"><span><b>DoubtRoom</b> | Evidence and measurement</span><span>6 / 7</span></div>
+  <div class="kicker">Traction</div><h2>What the live dashboard shows</h2><div class="bar"></div>
+  <p>Figures from the public <a href="https://doubtroom-ochre.vercel.app/impact">/impact</a> endpoint, read on 20 November 2026 (last updated 20 Nov 01:33 IST). They are small and reported as they are.</p>
+  <div class="grid3" style="margin:10px 0">
+    <div class="card stat"><b>3</b><span>Real profiles (demo sessions excluded)</span></div>
+    <div class="card stat"><b>2</b><span>Onboarded profiles</span></div>
+    <div class="card stat"><b>2</b><span>Active in 24 hours</span></div>
+    <div class="card stat"><b>1</b><span>Mentor</span></div>
+    <div class="card stat"><b>0</b><span>Real doubts posted</span></div>
+    <div class="card stat"><b>48</b><span>Demo sandbox sessions (counted separately)</span></div>
+  </div>
+  <p>Real doubts, AI answers, verifications and upvotes are all zero on the real-user side, so the dashboard has no median answer times yet. Sample doubts, votes and the mentor review you see in the demo belong to the seeded sandbox, not to real students. Automated end-to-end tests also posted test doubts into the demo room.</p>
+  <div class="card"><h3>What has been verified</h3>
+    <ul style="margin:4px 0 0">
+      <li>Production end-to-end checks passed for a photo doubt, a notes citation, a TA answer, two-user live sync, a mentor DM and API authorization boundaries (anonymous calls to mutating routes return 401).</li>
+      <li>The Groq text path answered a doubt in about 2.6 s; Gemini read a photo of a forwarding table correctly in about 2.9 s.</li>
+      <li>The webhook returns 401 when unsigned and 200 when correctly signed.</li>
+      <li>PostHog events reach the project, and the morning recap ran once in production and posted a correct card.</li>
+    </ul></div>
+  <div class="card" style="margin-top:9px"><h3>Not yet verified with real accounts</h3>
+    <p style="margin:0">Google sign-in and onboarding on production, mentor verification updating cards on two devices, announcement "Seen by" with three or more readers, mute and unmute, Exam Eve with two users, and the mentor presence dot. These paths are built, with fallbacks where noted, but should not be read as proven in live use.</p></div>
+  <div class="ph" style="margin-top:9px"><b>Testimonials:</b> [add 3 to 5 student or mentor quotes here, with permission]</div>
+  <div class="foot"><span>DoubtRoom write-up</span><span>6 / 7</span></div>
+</section>
+
+<!-- 7 BUSINESS -->
+<section class="page">
+  <div class="top"><span><b>DoubtRoom</b> | Growth and next steps</span><span>7 / 7</span></div>
+  <div class="kicker">Growth</div><h2>A pilot for one college cohort</h2><div class="bar"></div>
+  <p>DoubtRoom starts with one curriculum and an exam-season window. A small pilot can show whether subject rooms help students find answers they can use again.</p>
+  <div class="grid2">
+    <div class="card"><h3>Start with one course</h3><p style="margin:0">Recruit a class representative and a course mentor for a subject with an upcoming exam. Track how often AI drafts receive a review and whether students return for the recap.</p></div>
+    <div class="card"><h3>Measure before expanding</h3><p style="margin:0">Review activity and answer quality across the exam period. Collect student and mentor feedback with permission before moving to another cohort.</p></div>
+    <div class="card"><h3>Proposed business model</h3><p style="margin:0">Students use the rooms free. Colleges or coaching centres could pay per student for private course rooms, curated notes grounding and aggregate usage reports. This is a proposal, not a live revenue stream.</p></div>
+    <div class="card"><h3>Where next</h3><p style="margin:0">Other colleges in the same group, then other Anna University affiliated colleges, then exam-coaching cohorts.</p></div>
+  </div>
+  <div class="kicker" style="margin-top:16px">Built during the challenge</div>
+  <p>The application code was built between 18 and 22 November 2026, using the open-source libraries in <code>package.json</code>. It was built with Claude Code, OpenAI Codex and the Nexconn <code>nexconn-chat</code> skill. The course catalog and its sources are documented in the repository.</p>
+  <div class="kicker" style="margin-top:6px">Future work, not built today</div>
+  <ul>
+    <li>Push reminders for open doubts and exam-eve rooms.</li>
+    <li>Voice-note doubts with transcription.</li>
+    <li>Native mobile apps beyond the installable PWA.</li>
+    <li>A college dashboard for rooms, mentors and aggregate usage.</li>
+  </ul>
+  <div class="card" style="margin-top:14px;background:var(--ind);color:#fff;border:0">
+    <h3 style="color:var(--amb)">Try it</h3>
+    <p style="margin:0">Open <a href="https://doubtroom-ochre.vercel.app/try" style="color:#fff;text-decoration:underline">doubtroom-ochre.vercel.app/try</a> for a 24-hour sandbox, or read the code at <a href="https://github.com/dhaanish597/doubtroom" style="color:#fff;text-decoration:underline">github.com/dhaanish597/doubtroom</a>. Nexconn App Key: <b style="color:var(--amb)">{{APP_KEY}}</b></p></div>
+  <div class="foot"><span>DoubtRoom write-up</span><span>7 / 7</span></div>
+</section>
+</body></html>

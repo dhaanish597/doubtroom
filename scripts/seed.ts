@@ -3,8 +3,10 @@ import { seedProfanityWords } from "./seed-moderation";
 import { TA_AVATAR } from "@/lib/nexconn/bot-avatar";
 import { BOT_IDS, DEMO_ROOM_ID } from "@/lib/nexconn/ids";
 import { issueToken, joinGroup, NexconnError } from "@/lib/nexconn/server";
-import { sectionRoom, subjectRoom, type RoomDefinition } from "@/lib/rooms/definitions";
+import type { RoomDefinition } from "@/lib/rooms/definitions";
 import { provisionRooms } from "@/lib/rooms/provision";
+import { syncCatalogRooms } from "@/lib/rooms/sync";
+import { catalogRooms } from "@/lib/rooms/sync-plan";
 import { adminSupabase } from "@/lib/supabase/admin";
 import { readFile } from "node:fs/promises";
 import { DEMO_NOTE_TITLE } from "@/lib/ai/demo-note";
@@ -44,9 +46,6 @@ async function seed() {
     profileIds.set(bot.nexconn_user_id, data.id);
   }
 
-  const { error: courseError } = await db.from("courses").upsert(courses);
-  if (courseError) throw courseError;
-
   // The demo room borrows the real CN course so the composer shows units and "Ask a senior" appears.
   const demoScript = loadDemoScript();
   if (demoScript.roomId !== DEMO_ROOM_ID) throw new Error(`data/demo-seed.json must target ${DEMO_ROOM_ID}`);
@@ -55,11 +54,12 @@ async function seed() {
     id: DEMO_ROOM_ID, kind: "demo", title: "Demo: Computer Networks",
     course_code: demoCourse, dept: null, year: null, section: null,
   };
-  const sections = cohorts.flatMap(({ dept, year, sections }) =>
-    sections.map((section) => sectionRoom({ dept, year, section })),
-  );
-  const rooms = [...courses.map(subjectRoom), ...sections, demo];
-  await provisionRooms(rooms, true);
+  const catalogRoomList = catalogRooms(catalog);
+  const sections = catalogRoomList.filter(({ kind }) => kind === "section");
+  const rooms = [...catalogRoomList, demo];
+  // Courses and catalog rooms go through the same function as POST /api/admin/sync-rooms.
+  await syncCatalogRooms({ ownerRegistered: true, syncMembers: false });
+  await provisionRooms([demo], true);
   await joinGroup(demo.id, [BOT_IDS.DEMO_MENTOR, BOT_IDS.DEMO_PRIYA]);
 
   const ownerId = profileIds.get(BOT_IDS.TA);

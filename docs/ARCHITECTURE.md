@@ -44,32 +44,64 @@ sequenceDiagram
 
 ## Ask a doubt
 
+Two triggers lead to the same work. Nexconn's `message:send` webhook is the primary path. The browser relay (`/api/ta/ask`) is a fallback. Both call `acceptTaRequest` ([src/lib/ta/accept.ts](../src/lib/ta/accept.ts)), which checks room membership and the unit and photo URL, then calls the `reserve_ta_request` database function. That function reserves the message ID, so a doubt is answered once even when both triggers fire.
+
 ```mermaid
 sequenceDiagram
     participant B as Student
-    participant A as DoubtRoom API
-    participant S as Supabase
     participant N as Nexconn
+    participant W as POST /api/nexconn/webhook
+    participant R as POST /api/ta/ask (relay)
+    participant S as Supabase
     participant L as Model provider
     opt Attach a photo
-        B->>A: Request signed upload for room
-        A-->>B: Signed upload destination
-        B->>S: Upload image
+        B->>S: Upload image through a signed URL
     end
-    B->>N: Send dr:doubt with question and unit
-    B->>A: POST /api/ta/ask with message reference
-    A->>S: Check membership, reserve quota and look up cache
-    opt New answer needed
-        A->>L: Ask configured provider with deadline and fallback
-        L-->>A: Draft answer or provider failure
+    B->>N: Send dr:doubt (or text mentioning @TA)
+    par Webhook, primary
+        N->>W: message:send with Signature
+        W->>W: Check AppKey, sha1(AppSecret+Nonce+Timestamp) and 5 min skew
+        W-->>N: 200 at once, work continues in after()
+        W->>S: Record message in webhook_events (duplicates dropped)
+        W->>S: acceptTaRequest, then reserve_ta_request
+    and Browser relay, fallback
+        B->>R: POST with message reference
+        R->>S: acceptTaRequest, then reserve_ta_request
     end
-    A->>N: Post dr:answer as bot_ta
-    A->>S: Record result
-    A->>N: Update doubt status metadata
+    Note over S: reserve_ta_request lets one caller through per message ID and applies quotas
+    opt Reserved and not cached
+        S->>S: Look up notes (pgvector) and the 7-day answer cache
+        S->>L: answerDoubt with deadline and provider fallback
+        L-->>S: Draft answer or provider failure
+    end
+    S->>N: Post dr:answer as bot_ta
+    S->>S: Record answer (finish_ta_answer or finish_grounded_answer)
+    S->>N: Update doubt status metadata
     N-->>B: Deliver answer and metadata
 ```
 
-A provider or quota failure produces a visible status card. The seven-day cache can reuse eligible text answers. Photos take the image-aware provider path.
+Model providers: text doubts, @TA mentions, Exam Eve answers and recaps go to Groq `openai/gpt-oss-120b` (`LLM_PRIMARY=groq`). A photo doubt always tries Gemini `gemini-3.5-flash-lite` first, and Gemini is the fallback for text. Notes are embedded with `gemini-embedding-2` for grounded answers with [S#] sources. See D-016 and D-017 in [DECISIONS.md](DECISIONS.md) and [src/lib/ai/answer.ts](../src/lib/ai/answer.ts).
+
+A provider or quota failure produces a visible status card. The seven-day cache can reuse eligible text answers. Photos take the image-aware provider path. Nexconn's signature does not cover the body, so membership, quota and message-ID checks bound any replayed delivery (D-018).
+
+## Sync rooms
+
+```mermaid
+sequenceDiagram
+    participant A as Admin (/admin)
+    participant R as POST /api/admin/sync-rooms
+    participant S as Supabase
+    participant N as Nexconn
+    A->>R: Sync rooms
+    R->>R: Check admin, origin and 45 s budget
+    R->>S: Upsert catalog courses and rooms
+    R->>N: Find existing groups, create missing ones (owner bot_ta)
+    R->>S: Read real members of catalog rooms
+    R->>N: Join members whose Nexconn membership is missing
+    R-->>A: created, joined, deferred
+```
+
+The job lives in [src/lib/rooms/sync.ts](../src/lib/rooms/sync.ts). It is idempotent, joins up to 100 members per batch call, and returns `deferred` when the time budget ends, so the admin runs it again until `deferred` is 0. Demo rooms and try visitors are skipped.
 
 ## Verify or upvote
 
@@ -90,17 +122,7 @@ The mentor inbox and room board use the stored answers. The chat card uses messa
 
 ## Mention the TA in normal chat
 
-```mermaid
-sequenceDiagram
-    participant B as Student
-    participant N as Nexconn
-    participant A as TA route
-    B->>N: Send text mentioning bot_ta
-    B->>A: POST /api/ta/ask in mention mode
-    A->>A: Check actor, membership, mention and quota
-    A->>N: Post answer from bot_ta
-    N-->>B: Display reply in timeline
-```
+A text message that mentions `bot_ta` follows the same two triggers as a doubt (webhook first, browser relay as fallback) in `mention` mode. `acceptTaRequest` checks the actor, membership, the mention and the quota. The answer is posted by `bot_ta` and shows in the timeline.
 
 ## Read an announcement
 

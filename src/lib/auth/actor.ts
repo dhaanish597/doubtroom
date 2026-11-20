@@ -57,6 +57,14 @@ export async function getActor(request?: Request): Promise<Actor | null> {
   return profile.data ? { kind: "try", profile: profile.data } : null;
 }
 
+/** Actor for a chat sender reported by a verified Nexconn webhook. Bots and unknown IDs return null. */
+export async function actorForNexconnUser(nexconnUserId: string): Promise<Actor | null> {
+  const { data, error } = await adminSupabase().from("profiles").select(actorColumns)
+    .eq("nexconn_user_id", nexconnUserId).neq("role", "bot").maybeSingle<ActorProfile>();
+  if (error) throw error;
+  return data ? { kind: data.is_try ? "try" : "user", profile: data } : null;
+}
+
 export function publicProfile(profile: ActorProfile): PublicProfile {
   const { id, nexconn_user_id, display_name, avatar_url, college, dept, year, section, role, lang, is_try, onboarded_at } = profile;
   return { id, nexconn_user_id, display_name, avatar_url, college, dept, year, section, role, lang, is_try, onboarded_at };

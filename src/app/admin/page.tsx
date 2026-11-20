@@ -9,6 +9,7 @@ import { NotesUpload } from "@/components/admin/NotesUpload";
 import { MetricsExport } from "@/components/admin/MetricsExport";
 import { ReportsPanel } from "@/components/admin/ReportsPanel";
 import { RolesPanel } from "@/components/admin/RolesPanel";
+import { SyncRoomsPanel } from "@/components/admin/SyncRoomsPanel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPageActor } from "@/lib/auth/actor";
 import { isAdminActor } from "@/lib/moderation/server";
@@ -54,6 +55,7 @@ async function AdminGate() {
       <ReportsPanel />
       <RolesPanel />
       <EvePanel />
+      <SyncRoomsPanel />
       <NotesUpload />
       <MetricsExport />
     </main>

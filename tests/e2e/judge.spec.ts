@@ -23,7 +23,11 @@ async function postDoubt(page: Page, question: string) {
   await page.getByRole("button", { name: "Post doubt" }).click();
 }
 
+// Doubt-posting tests write into the judges' demo room; run them only with E2E_POST_DOUBTS=1.
+const postsDoubts = !process.env.E2E_POST_DOUBTS;
+
 test("a doubt posted in the demo room reaches a second user", async ({ page, browser, baseURL }) => {
+  test.skip(postsDoubts, "Posts into demo_cn; set E2E_POST_DOUBTS=1 to run");
   const observer = await browser.newContext({ baseURL, viewport: { width: 1280, height: 900 } });
   try {
     const second = await observer.newPage();
@@ -39,6 +43,7 @@ test("a doubt posted in the demo room reaches a second user", async ({ page, bro
 
 // Needs a live LLM (GEMINI_API_KEY or GROQ_API_KEY on the server). Blocked until those keys are set.
 test("the AI TA answers a demo doubt, then upvote and mentor DM work", async ({ page }) => {
+  test.skip(postsDoubts, "Posts into demo_cn; set E2E_POST_DOUBTS=1 to run");
   await startDemo(page);
   const question = `Why does TCP use sequence numbers? (Study check ${Date.now().toString(36)})`;
   await postDoubt(page, question);

@@ -1,6 +1,7 @@
 import { createHmac } from "node:crypto";
 
-export const TRY_ATTEMPTS_PER_HOUR = 10;
+/** Per IP per hour. High enough for a room of judges behind one office network. */
+export const TRY_ATTEMPTS_PER_HOUR = 40;
 export const TRY_ATTEMPT_EVENT = "try_attempt";
 
 /** "Judge" plus four characters of the sandbox chat ID, for example "Judge K3P9". */

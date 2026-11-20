@@ -4,11 +4,32 @@ import { describe, expect, it, vi } from "vitest";
 import { canDirectMessage, canUseRoom, isDemoRoomId } from "../src/lib/auth/sandbox";
 import { signTryCookie, tryCookieOptions, verifyTryCookie, TRY_COOKIE_MAX_AGE_SECONDS } from "../src/lib/auth/try-cookie";
 import { createTryUserId } from "../src/lib/nexconn/ids";
-import { clientIp, hashIp, judgeName } from "../src/lib/try/identity";
+import { clientIp, hashIp, judgeName, TRY_ATTEMPTS_PER_HOUR } from "../src/lib/try/identity";
 import { demoMentorReply } from "../src/lib/try/mentor-reply";
 import { detectTourSteps, upvoteIncreased } from "../src/lib/try/tour";
 
 vi.mock("server-only", () => ({}));
+
+const rateLimit = vi.hoisted(() => ({ count: 0, updates: [] as unknown[] }));
+vi.mock("../src/lib/supabase/admin", () => ({
+  adminSupabase: () => ({
+    from: () => ({
+      insert: () => ({ select: () => ({ single: async () => ({ data: { id: "event-1" }, error: null }) }) }),
+      select: () => {
+        const query: Record<string, unknown> = {};
+        query.eq = () => query;
+        query.is = () => query;
+        query.gte = async () => ({ count: rateLimit.count, error: null });
+        return query;
+      },
+      update: (props: unknown) => {
+        rateLimit.updates.push(props);
+        return { eq: async () => ({ error: null }) };
+      },
+    }),
+  }),
+}));
+vi.mock("../src/lib/nexconn/server", () => ({ issueToken: vi.fn(), joinGroup: vi.fn() }));
 
 const secret = "a-test-secret-of-at-least-32-characters";
 const profileId = "36a51f5f-6049-4e5c-b416-c0a69ec2a67c";
@@ -131,5 +152,23 @@ describe("demo mentor and tour", () => {
   it("notices an upvote only when a known answer's count rises", () => {
     expect(upvoteIncreased(new Map([["a", 1]]), new Map([["a", 2]]))).toBe(true);
     expect(upvoteIncreased(new Map([["a", 2]]), new Map([["a", 2], ["b", 5]]))).toBe(false);
+  });
+});
+
+describe("try rate limit", () => {
+  it("allows 40 attempts per hour per network", () => {
+    expect(TRY_ATTEMPTS_PER_HOUR).toBe(40);
+  });
+
+  it("allows the last attempt under the limit and refuses and marks the next one", async () => {
+    const { allowTryAttempt } = await import("../src/lib/try/server");
+    rateLimit.updates = [];
+    rateLimit.count = TRY_ATTEMPTS_PER_HOUR;
+    expect(await allowTryAttempt("198.51.100.4", secret)).toBe(true);
+    expect(rateLimit.updates).toHaveLength(0);
+
+    rateLimit.count = TRY_ATTEMPTS_PER_HOUR + 1;
+    expect(await allowTryAttempt("198.51.100.4", secret)).toBe(false);
+    expect(rateLimit.updates).toHaveLength(1);
   });
 });

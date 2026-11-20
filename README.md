@@ -17,10 +17,10 @@ A question about TCP can disappear under timetable updates in the class group. T
 ## What students can do
 
 - Sign in with Google and choose a department, year and section to join subject and class rooms.
-- Post a question with a unit or photo, or mention @TA in chat. DoubtRoom TA replies in the room.
+- Post a question with a unit or photo, or mention @TA in chat. DoubtRoom TA replies in the room. Photo doubts are read by Gemini, and answers can cite uploaded course notes as [S1], [S2].
 - Upvote a helpful answer. A course mentor can verify it, add a correction and find outstanding questions in the mentor inbox.
 - Open a private chat with a senior from an answer. The question travels with the conversation.
-- Read a pinned announcement. Class reps can inspect read counts and the reader list when Nexconn receipts are available.
+- Read a pinned announcement. Group read receipts for announcements show "Seen by X of Y" and a reader list to class reps. If the plan does not expose receipts, the card falls back to "Delivered to N members".
 - Enter a scheduled Exam Eve open channel to revise together and ask the TA.
 - Review the morning recap of eligible answers from the previous day.
 - Start a 24-hour judge session without Google sign-in. The Computer Networks sandbox includes seeded classmates and a scripted demo mentor.
@@ -34,9 +34,10 @@ A question about TCP can disappear under timetable updates in the class group. T
 | Room history and messages | `sendMessage`, `createMessagesQuery`, group mentions and image messages | [Group chat](src/components/chat/GroupChat.tsx), [history](src/components/chat/useChannelHistory.ts) |
 | Doubt, answer, announcement and recap cards | `registerCustomMessages` | [Payloads](src/lib/nexconn/messages.ts), [registration](src/lib/nexconn/client.ts) |
 | TA in the room | `sendGroupChannelMessage` from `bot_ta` | [TA route](src/app/api/ta/ask/route.ts) |
+| TA trigger | `message:send` webhook (signature checked, deduplicated by message ID), with a client relay fallback | [Webhook](src/app/api/nexconn/webhook/route.ts) |
 | Live upvotes and verification | Server message metadata, client metadata updates | [Answer actions](src/lib/answers/server.ts), [group chat](src/components/chat/GroupChat.tsx) |
 | Mentor DMs | Direct channels, typing status and read receipts | [Direct chat](src/components/chat/DirectChat.tsx), [read receipts](src/components/chat/useReadReceipts.ts) |
-| Mentor availability | Online-status subscription and `getUserConnectionStatus` | [Presence adapter](src/lib/nexconn/presence.ts), [cached lookup](src/lib/mentors/presence-cache.ts) |
+| Mentor availability | Online-status subscription, with `getUserConnectionStatus` polling as a fallback | [Presence adapter](src/lib/nexconn/presence.ts), [cached lookup](src/lib/mentors/presence-cache.ts) |
 | Announcement readers | Receipt requests, `sendReadReceiptResponse`, receipt users query | [Group receipts](src/components/chat/useGroupReceipts.ts), [reader list](src/components/chat/ReadersSheet.tsx) |
 | Exam Eve | Open channel creation, entry and bot messages | [Provisioning](src/lib/eves/server.ts), [client](src/components/eve/useOpenChannel.ts) |
 | Room moderation | Group mute list and profanity list | [Moderation adapter](src/lib/nexconn/moderation.ts), [seed](scripts/seed-moderation.ts) |
@@ -51,16 +52,17 @@ flowchart LR
   B -->|Signed photo upload| S[Supabase Storage]
   A --> P[Supabase Auth and Postgres]
   A -->|Server SDK| N
-  A --> L[Gemini / Groq]
+  N -->|message:send webhook| A
+  A --> L[Groq text / Gemini photos, embeddings]
   C[Vercel Cron] --> A
   B -->|Optional events| H[PostHog]
 ```
 
-Nexconn delivers messages directly to each connected browser. Supabase stores identities, enrolments, answer reviews and study-room records. Vercel checks permissions, requests AI answers and posts them as the TA. Its morning cron publishes recaps at 07:00 IST. [Sequence diagrams](docs/ARCHITECTURE.md)
+Nexconn delivers messages directly to each connected browser. Its `message:send` webhook tells the server when a doubt card or @TA mention needs an answer; the browser also asks `/api/ta/ask` as a backup, and the server reserves each message once. Groq `openai/gpt-oss-120b` answers text doubts, @TA, Exam Eve and the recap. Gemini `gemini-3.5-flash-lite` reads photo doubts and is the text fallback. `gemini-embedding-2` grounds answers in uploaded notes. Supabase stores identities, enrolments, answer reviews and study-room records. Vercel checks permissions, requests AI answers and posts them as the TA. Its morning cron publishes recaps at 07:00 IST. [Sequence diagrams](docs/ARCHITECTURE.md)
 
 ## Traction
 
-On 19 November 2026 at 19:06 IST the public dashboard reported one non-demo profile, zero onboarded profiles, zero active users in the preceding 24 hours and zero non-demo doubts or verified answers. It reported three demo sessions separately. [Current figures and update time](https://doubtroom-ochre.vercel.app/impact)
+Live figures, with the time they were last updated, are on the [public impact dashboard](https://doubtroom-ochre.vercel.app/impact).
 
 ## Run locally
 
