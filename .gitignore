@@ -44,3 +44,6 @@ next-env.d.ts
 
 /test-results/
 /playwright-report/
+
+# Remotion project for the demo video (large media, kept out of the repo)
+/pitch-video/

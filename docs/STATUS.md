@@ -1,7 +1,7 @@
 # STATUS
 
-Last updated: 20 Nov 2026 by Claude Code
-Current phase: 14 done; next 15 (video) and 17 (submission)
+Last updated: 22 Nov 2026 by Claude Code
+Current phase: 15 done (demo video); next 17 (submission)
 Live URL: https://doubtroom-ochre.vercel.app
 Latest implementation tag: phase-14
 
@@ -38,6 +38,8 @@ Latest implementation tag: phase-14
 
 - Phase 14 (20 Nov): README and ARCHITECTURE updated for the webhook, room sync and model split; write-up PDF regenerated from `docs/writeup/` (7 pages, App Key on page 1); clean-clone install, typecheck, lint, tests and build pass; gitleaks over full history clean; repository made public.
 
+- Phase 15 (22 Nov): the 2 min 44 s narrated demo video is at `public/downloads/doubtroom-demo.mp4` (1080p, about 9.7 MB). Its screen clips were re-recorded from the live /try sandbox so each narrated beat shows the matching screen (Verified answer, Doubts board, senior DM, announcement, /impact). The Remotion source lives outside the repo in `pitch-video/`.
+
 ## Current state
 - **AI setup.** Text doubts, @TA mentions, Exam Eve answers and recap summaries use Groq `openai/gpt-oss-120b` (`LLM_PRIMARY=groq`). Photo doubts use Gemini `gemini-3.5-flash-lite`, which is also the text fallback. Notes grounding embeds with `gemini-embedding-2` and answers carry [S#] sources (D-016, D-017).
 - **TA trigger.** The Nexconn `message:send` webhook (`POST /api/nexconn/webhook`) is primary. The browser relay (`/api/ta/ask`) is a fallback. Both go through `acceptTaRequest`, and `reserve_ta_request` answers each message once (D-018). See [ARCHITECTURE.md](ARCHITECTURE.md).
@@ -59,8 +61,7 @@ Latest implementation tag: phase-14
 ## Manual steps left
 1. Nexconn Console: Chat > Chat settings > Webhooks, URL `https://doubtroom-ochre.vercel.app/api/nexconn/webhook`, event `message:send`.
 2. Catalog: exam dates are null, and only CSE III A/B with R2021 course codes exist. RMKEC's 2026 timetable names R2024, so confirm the real codes in `data/catalog.json`, then run `pnpm seed` and Sync rooms.
-3. Record the demo video (Phase 15).
-4. Replace `public/downloads/doubtroom-demo.mp4` (or the README and PDF link) with the new video, then make the submission on the challenge form from `docs/SUBMISSION.md` (Phase 17).
+3. Submit on the challenge form from `docs/SUBMISSION.md` (Phase 17).
 
 ## Known bugs (P0 blocks demo, P1 visible, P2 cosmetic)
 - No P0 or P1 known.

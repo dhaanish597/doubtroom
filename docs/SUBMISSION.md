@@ -76,7 +76,7 @@ No, built for this challenge. Open-source libraries are listed in package.json.
 - [ ] Group read receipts: send an announcement with 3 real accounts and confirm "Seen by X of Y" (otherwise word it as the fallback)
 - [ ] Presence dot for a mentor changes when the mentor goes online and offline
 - [ ] Google sign-in works on production
-- [ ] App Key in the PDF matches the Vercel value
-- [ ] Regenerate public/downloads/doubtroom.pdf and doubtroom-demo.mp4, which predate the 20 Nov changes
-- [ ] Make the GitHub repo public
+- [x] App Key in the PDF matches the Vercel value
+- [x] Regenerate public/downloads/doubtroom.pdf and doubtroom-demo.mp4, which predate the 20 Nov changes
+- [x] Make the GitHub repo public
 - [ ] Active users and /impact figures match
